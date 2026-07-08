@@ -1,0 +1,51 @@
+<h2 *ngIf="modelCfg() as cfg">✅ QA Review — {{ cfg.icon }} {{ workspace.tenant() }} · {{ workspace.activeProject() }} / {{ workspace.modelName() }}</h2>
+
+<ng-container *ngIf="stats() as s">
+  <div class="info-box" *ngIf="s.total === 0">No data. Sync from the sidebar first.</div>
+
+  <ng-container *ngIf="s.total > 0">
+    <div class="metrics">
+      <div class="metric"><div class="metric-value">{{ s.qa_pending }}</div><div class="metric-label">Pending QA</div></div>
+      <div class="metric"><div class="metric-value">{{ s.qa_done }}</div><div class="metric-label">QA Done</div></div>
+      <div class="metric"><div class="metric-value">{{ s.unpublished }}</div><div class="metric-label">Unpublished</div></div>
+      <div class="metric"><div class="metric-value">{{ s.published }}</div><div class="metric-label">Published</div></div>
+    </div>
+    <hr />
+
+    <div class="filters-row">
+      <div class="field">
+        <label>Show</label>
+        <select [ngModel]="show()" (ngModelChange)="show.set($event)">
+          <option *ngFor="let o of showOptions" [value]="o">{{ o }}</option>
+        </select>
+      </div>
+      <div class="field grow">
+        <label>Search Plot ID</label>
+        <input type="text" [ngModel]="plotIdSearch()" (ngModelChange)="plotIdSearch.set($event)" />
+      </div>
+    </div>
+
+    <p class="caption">Showing <b>{{ plots().length }}</b> plots</p>
+
+    <div class="info-box success" *ngIf="plots().length === 0">Nothing to review in this filter. ✅</div>
+
+    <ng-container *ngIf="plots().length > 0 && modelCfg() as cfg2">
+      <app-review-table
+        [plots]="plots()"
+        [modelCfg]="cfg2"
+        role="QA"
+        [tenant]="workspace.tenant()"
+        [project]="workspace.activeProject()"
+        [modelName]="workspace.modelName()"
+        (changed)="onChanged()"
+      ></app-review-table>
+
+      <hr />
+      <div class="actions-row">
+        <button class="btn" (click)="generateEvidence()">🛰️ Generate Satellite Evidence HTML</button>
+        <button class="btn" (click)="saveProgress()">💾 Save Progress</button>
+      </div>
+      <p class="success" *ngIf="saveMessage()">{{ saveMessage() }}</p>
+    </ng-container>
+  </ng-container>
+</ng-container>

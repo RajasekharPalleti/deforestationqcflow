@@ -1,0 +1,23 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "streamlit-app",
+      "runtimeExecutable": "C:\\Users\\rajasekhar.palleti\\Downloads\\deforestationqcflow\\legacy-streamlit\\.venv_win\\Scripts\\python.exe",
+      "runtimeArgs": ["-m", "streamlit", "run", "C:\\Users\\rajasekhar.palleti\\Downloads\\deforestationqcflow\\legacy-streamlit\\app.py", "--server.headless", "true"],
+      "port": 8501
+    },
+    {
+      "name": "backend-api",
+      "runtimeExecutable": "C:\\Users\\rajasekhar.palleti\\Downloads\\deforestationqcflow\\backend\\.venv\\Scripts\\python.exe",
+      "runtimeArgs": ["-m", "uvicorn", "app.main:app", "--port", "8000", "--app-dir", "C:\\Users\\rajasekhar.palleti\\Downloads\\deforestationqcflow\\backend"],
+      "port": 8000
+    },
+    {
+      "name": "frontend-app",
+      "runtimeExecutable": "C:\\Program Files\\nodejs\\node.exe",
+      "runtimeArgs": ["-e", "process.chdir('C:/Users/rajasekhar.palleti/Downloads/deforestationqcflow/frontend'); process.argv=[process.argv[0],'ng','serve']; require('C:/Users/rajasekhar.palleti/Downloads/deforestationqcflow/frontend/node_modules/@angular/cli/bin/ng.js');"],
+      "port": 4200
+    }
+  ]
+}

@@ -1,0 +1,26 @@
+<div class="cards-row">
+  <div class="card" *ngFor="let c of cards" [ngStyle]="cardStyle(c.key, c.color)">
+    <div class="value" style="color:#225356">{{ valueFor(c.key) }}</div>
+    <div class="label">{{ c.label }}</div>
+    <button class="card-btn" (click)="click(c.key)">
+      {{ isActive(c.key) ? '✓ ' + c.label : c.label }}
+    </button>
+  </div>
+</div>
+
+<div class="sub-breakdown" *ngIf="showSubBreakdown()">
+  <div class="sub-card" [ngStyle]="subCardStyle('#E53935', isSubActive('published_deforested'))">
+    <div class="sub-value" style="color:#C62828">{{ stats().published_deforested }}</div>
+    <div class="sub-label">↳ Deforested</div>
+    <button class="card-btn" (click)="click('published_deforested')">
+      {{ isSubActive('published_deforested') ? '✓ Deforested' : 'Deforested' }}
+    </button>
+  </div>
+  <div class="sub-card" [ngStyle]="subCardStyle('#1976D2', isSubActive('published_not_deforested'))">
+    <div class="sub-value" style="color:#1565C0">{{ stats().published_not_deforested }}</div>
+    <div class="sub-label">↳ Not Deforested</div>
+    <button class="card-btn" (click)="click('published_not_deforested')">
+      {{ isSubActive('published_not_deforested') ? '✓ Not Deforested' : 'Not Deforested' }}
+    </button>
+  </div>
+</div>

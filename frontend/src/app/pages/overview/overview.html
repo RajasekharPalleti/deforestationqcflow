@@ -1,0 +1,81 @@
+<h2 *ngIf="modelCfg() as cfg">
+  {{ cfg.icon }} {{ workspace.tenant() }} &nbsp;·&nbsp; {{ workspace.activeProject() }} &nbsp;—&nbsp;
+  {{ workspace.modelName() }}
+</h2>
+
+<ng-container *ngIf="stats() as s">
+  <div class="info-box" *ngIf="s.total === 0">
+    No data loaded yet. Click <b>🔄 Sync from API</b> in the sidebar.
+  </div>
+
+  <ng-container *ngIf="s.total > 0">
+    <app-stat-cards [stats]="s" [modelName]="workspace.modelName()"></app-stat-cards>
+
+    <hr />
+
+    <details [open]="filtersExpanded()">
+      <summary>Filters</summary>
+      <div class="filters-grid">
+        <div class="field">
+          <label>Detection Status</label>
+          <select [ngModel]="detectionFilter()" (ngModelChange)="detectionFilter.set($event)">
+            <option *ngFor="let o of detectionOptions()" [value]="o">{{ o }}</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Publish Status</label>
+          <select [ngModel]="publishFilter()" (ngModelChange)="publishFilter.set($event)">
+            <option value="All">All</option>
+            <option value="published">published</option>
+            <option value="unpublished">unpublished</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>QA Status</label>
+          <select [ngModel]="qaFilter()" (ngModelChange)="qaFilter.set($event)">
+            <option *ngFor="let o of qaOptions()" [value]="o">{{ o }}</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Search Plot ID</label>
+          <input type="text" placeholder="e.g. BR-PLOT-1042" [ngModel]="plotIdSearch()"
+                 (ngModelChange)="plotIdSearch.set($event)" />
+        </div>
+      </div>
+
+      <div class="filters-grid date-row" *ngIf="workspace.modelName() === 'Deforestation'">
+        <div class="field">
+          <label>Deforestation Date — From</label>
+          <input type="date" [ngModel]="dateFrom()" (ngModelChange)="dateFrom.set($event)" />
+        </div>
+        <div class="field">
+          <label>Deforestation Date — To</label>
+          <input type="date" [ngModel]="dateTo()" (ngModelChange)="dateTo.set($event)" />
+        </div>
+      </div>
+
+      <button class="btn" (click)="clearFilters()">Clear Filters</button>
+    </details>
+
+    <p class="caption">Showing <b>{{ plots().length }}</b> plots</p>
+
+    <div class="info-box" *ngIf="plots().length === 0">No plots match the selected filters.</div>
+
+    <div class="table-wrap" *ngIf="plots().length > 0">
+      <table>
+        <thead>
+          <tr>
+            <th *ngFor="let col of tableColumns()">{{ col }}</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let row of tableRows()">
+            <td *ngFor="let col of tableColumns()">{{ row[col] }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <button class="btn" *ngIf="plots().length > 0" (click)="downloadCsv()">⬇️ Download CSV</button>
+  </ng-container>
+</ng-container>

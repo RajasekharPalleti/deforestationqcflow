@@ -1,0 +1,43 @@
+<h2>👥 Manage Users</h2>
+
+<div class="table-wrap">
+  <table>
+    <thead>
+      <tr><th>username</th><th>role</th><th>display_name</th></tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let u of users()">
+        <td>{{ u.username }}</td>
+        <td>{{ u.role }}</td>
+        <td>{{ u.display_name }}</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<hr />
+
+<form class="add-user-form" (ngSubmit)="addUser()">
+  <div class="field">
+    <label>Username</label>
+    <input type="text" [ngModel]="newUsername()" (ngModelChange)="newUsername.set($event)" name="username" />
+  </div>
+  <div class="field">
+    <label>Display Name</label>
+    <input type="text" [ngModel]="newDisplayName()" (ngModelChange)="newDisplayName.set($event)" name="displayName" />
+  </div>
+  <div class="field">
+    <label>Role</label>
+    <select [ngModel]="newRole()" (ngModelChange)="newRole.set($event)" name="role">
+      <option *ngFor="let r of roles()" [value]="r">{{ r }}</option>
+    </select>
+  </div>
+  <div class="field">
+    <label>Password</label>
+    <input type="password" [ngModel]="newPassword()" (ngModelChange)="newPassword.set($event)" name="password" />
+  </div>
+  <button type="submit" class="btn btn-primary" [disabled]="submitting()">Add User</button>
+</form>
+
+<p class="success" *ngIf="successMessage()">{{ successMessage() }}</p>
+<p class="error" *ngIf="errorMessage()">{{ errorMessage() }}</p>

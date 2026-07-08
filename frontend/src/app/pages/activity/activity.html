@@ -1,0 +1,18 @@
+<h2>📋 Activity Log — {{ workspace.tenant() }} · {{ workspace.activeProject() }} / {{ workspace.modelName() }}</h2>
+
+<div class="info-box" *ngIf="logs().length === 0">No activity yet for this tenant / project / model.</div>
+
+<div class="table-wrap" *ngIf="logs().length > 0">
+  <table>
+    <thead>
+      <tr>
+        <th *ngFor="let c of columns">{{ c }}</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let log of logs()">
+        <td *ngFor="let c of columns">{{ cell(log, c) }}</td>
+      </tr>
+    </tbody>
+  </table>
+</div>

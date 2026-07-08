@@ -1,0 +1,18 @@
+{
+  "name": "cropin-validation-tool",
+  "version": "1.0.0",
+  "private": true,
+  "description": "CropIn Model Validation Tool — Angular frontend + FastAPI backend",
+  "scripts": {
+    "setup:backend": "node scripts/setup-backend.js",
+    "install:frontend": "npm --prefix frontend install",
+    "install:all": "npm install && npm run install:frontend && npm run setup:backend",
+    "start:backend": "node scripts/start-backend.js",
+    "start:frontend": "npm --prefix frontend start",
+    "start": "concurrently -n BACKEND,FRONTEND -c blue,green \"npm run start:backend\" \"npm run start:frontend\"",
+    "stop": "node scripts/stop.js"
+  },
+  "devDependencies": {
+    "concurrently": "^9.0.0"
+  }
+}

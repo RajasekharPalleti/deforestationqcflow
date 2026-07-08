@@ -1,0 +1,49 @@
+<div class="sidebar-header">
+  <div class="logo"><img src="orbitai-icon.svg" alt="" class="logo-icon" /> CropIn Validation</div>
+  <div class="subtitle">Model QA &amp; Publish Platform</div>
+</div>
+
+<div class="user-box" *ngIf="auth.user() as user">
+  <div class="display-name">{{ user.display_name }}</div>
+  <div class="role-line">Role: <b class="role-badge">{{ user.role }}</b></div>
+</div>
+
+<hr />
+<div class="section-label">Workspace</div>
+
+<div class="workspace-summary">
+  <span class="env-badge">{{ workspace.environment() }}</span>
+  <span class="tenant-name">{{ workspace.tenant() }}</span>
+</div>
+<div class="field-error" *ngIf="liveProjects.error()">{{ liveProjects.error() }}</div>
+
+<div class="field">
+  <div class="field-caption">Project</div>
+  <app-project-picker></app-project-picker>
+</div>
+
+<div class="field">
+  <div class="field-caption">Model</div>
+  <select [ngModel]="workspace.modelName()" (ngModelChange)="onModelChange($event)">
+    <option *ngFor="let m of modelKeys()" [value]="m">{{ modelIcon(m) }} {{ m }}</option>
+  </select>
+</div>
+
+<button class="btn btn-block" (click)="sync()" [disabled]="syncing()"
+        title="Pull latest data from backend for this tenant / project / model">
+  {{ syncing() ? 'Syncing...' : '🔄 Sync from API' }}
+</button>
+<div class="sync-message" *ngIf="syncMessage()">{{ syncMessage() }}</div>
+
+<hr />
+
+<nav class="nav-radio">
+  <a *ngFor="let item of navItems()" [routerLink]="item.path" routerLinkActive="active" class="nav-item">
+    {{ item.label }}
+  </a>
+</nav>
+
+<hr />
+<button class="btn btn-block" (click)="backToMain()">Back to main page</button>
+
+<div class="footer">v2.1 · Internal Only</div>

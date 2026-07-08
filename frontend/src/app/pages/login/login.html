@@ -1,0 +1,28 @@
+<div class="login-page">
+  <div class="login-card">
+    <div class="login-header">
+      <img src="orbitai-icon.svg" alt="" class="emoji" />
+      <h2>CropIn Validation Tool</h2>
+      <p class="subtitle">Internal Model QA &amp; Publish Platform</p>
+    </div>
+    <hr />
+
+    <label class="field-label">Department</label>
+    <select [ngModel]="department()" (ngModelChange)="onDepartmentChange($event)">
+      <option *ngFor="let d of departments()" [value]="d">{{ d }}</option>
+    </select>
+
+    <label class="field-label">Your Name</label>
+    <select [ngModel]="name()" (ngModelChange)="name.set($event)">
+      <option *ngFor="let n of namesForDepartment()" [value]="n">{{ n }}</option>
+    </select>
+
+    <div class="spacer"></div>
+
+    <button class="btn-primary" (click)="continue()" [disabled]="submitting()">
+      {{ submitting() ? 'Signing in...' : 'Continue' }}
+    </button>
+
+    <p class="error" *ngIf="error()">{{ error() }}</p>
+  </div>
+</div>

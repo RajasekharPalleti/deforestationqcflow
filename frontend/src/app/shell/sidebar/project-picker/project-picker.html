@@ -1,0 +1,48 @@
+<div class="picker">
+  <button type="button" class="picker-box" (click)="toggle()">
+    <ng-container *ngIf="workspace.selectedProjects().length === 0">
+      <span class="placeholder">Select project(s)…</span>
+    </ng-container>
+
+    <ng-container *ngIf="workspace.selectedProjects().length > 0">
+      <span class="chip" *ngFor="let p of visibleChips()">{{ p }}</span>
+      <span class="chip chip-overflow" *ngIf="overflowCount() > 0">
+        +{{ overflowCount() }}
+        <span class="info-icon">ℹ️</span>
+        <div class="overflow-tooltip">
+          <div class="overflow-title">Selected projects:</div>
+          <div *ngFor="let p of workspace.selectedProjects()">{{ p }}</div>
+        </div>
+      </span>
+    </ng-container>
+
+    <span class="chevron">{{ open() ? '▴' : '▾' }}</span>
+  </button>
+
+  <p class="limit-message" *ngIf="limitMessage()">{{ limitMessage() }}</p>
+
+  <div class="panel" *ngIf="open()">
+    <input
+      type="text"
+      class="search-input"
+      placeholder="Search projects…"
+      [ngModel]="search()"
+      (ngModelChange)="search.set($event)"
+    />
+    <div class="selection-count">{{ workspace.selectedProjects().length }} / {{ maxSelected }} selected</div>
+
+    <div class="list" (scroll)="onListScroll($event)">
+      <div class="empty" *ngIf="liveProjects.loading()">Loading projects…</div>
+      <div class="empty" *ngIf="!liveProjects.loading() && filteredProjects().length === 0">
+        No projects available.
+      </div>
+
+      <div class="row" *ngFor="let p of filteredProjects()">
+        <input type="checkbox" [checked]="isSelected(p.name)" (click)="toggleSelection(p.name, $event)" />
+        <span class="row-name" (click)="makeActive(p.name)">{{ p.name }}</span>
+      </div>
+
+      <div class="empty loading-more" *ngIf="liveProjects.loadingMore()">Loading more…</div>
+    </div>
+  </div>
+</div>

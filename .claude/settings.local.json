@@ -1,0 +1,37 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell(& \"C:\\\\Users\\\\rajasekhar.palleti\\\\Downloads\\\\deforestationqcflow\\\\batch_files\\\\stop_app.bat\")",
+      "Bash(chmod +x \"/c/Users/rajasekhar.palleti/Downloads/deforestationqcflow/batch_files/run_app.sh\" \"/c/Users/rajasekhar.palleti/Downloads/deforestationqcflow/batch_files/stop_app.sh\")",
+      "Bash(chmod +x \"/c/Users/rajasekhar.palleti/Downloads/deforestationqcflow/batch_files/run_app.sh\")",
+      "PowerShell(& \"C:\\\\Users\\\\rajasekhar.palleti\\\\Downloads\\\\deforestationqcflow\\\\batch_files\\\\run_app.bat\")",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\\\\n\" http://localhost:8501 --max-time 5)",
+      "Bash(netstat -ano)",
+      "Bash(tasklist)",
+      "mcp__claude-in-chrome__navigate",
+      "Bash(curl -s http://localhost:8501 --max-time 5)",
+      "WebFetch(domain:cloud.cropin.in)",
+      "mcp__claude-in-chrome__tabs_context_mcp",
+      "WebFetch(domain:www.cropin.com)",
+      "Bash(awk 'NR>=945 && NR<=1900 && /#1A1D27|#0F1117|#1B3A1B|#2a2a2a|#0D1A3A|#0D1525|#3A0D0D|#2A0D0D|color:#888|color:#555|#E8EAED|#0F2A43/ {print NR\": \"$0}' app.py)",
+      "Bash(awk 'NR>=945 && NR<=1900 && /background:#1A2A1A|#444|#555|#0F1117|#333|#4CAF50|border-radius/ {print NR\": \"$0}' app.py)",
+      "Bash(curl -s \"http://localhost:8000/api/plots?tenant=BAT%20Brazil&project=BAT%20Brazil%20%E2%80%94%20New%20Growers&model_name=Deforestation&date_from=2024-01-01\")",
+      "Bash(python -c ' *)",
+      "Bash(rm -f \"/c/Users/rajasekhar.palleti/Downloads/deforestationqcflow/backend/data/\"validation.db*)",
+      "Bash(taskkill //F //PID 26728)",
+      "Bash(taskkill //F //PID 34660)",
+      "Bash(curl -s http://localhost:4200/ -o /dev/null -w \"frontend:%{http_code}\\\\n\")",
+      "Bash(curl -s \"http://localhost:8000/api/plots?tenant=BAT%20Brazil&project=BAT%20Brazil%20%E2%80%94%20New%20Growers&model_name=Deforestation&detection_status=Deforested&publish_status=unpublished&qa_status=Pending&plot_id_search=PLOT-10&date_from=2024-01-01\")",
+      "Bash(curl -s \"http://localhost:8000/api/plots?tenant=BAT%20Brazil&project=BAT%20Brazil%20%E2%80%94%20New%20Growers&model_name=Deforestation&detection_status=Deforested&date_from=2024-01-01&date_to=2024-06-01\")",
+      "Read(//c/Users/rajasekhar.palleti/Downloads/**)",
+      "Bash(curl -s -o /dev/null -w \"frontend4201:%{http_code}\\\\n\" http://localhost:4201 --max-time 5)",
+      "Read(//tmp/**)",
+      "Bash(pkill -f \"ng serve --port 4201\")",
+      "Bash(taskkill //F //PID 8188)",
+      "Bash(curl -s http://localhost:8000/api/health)",
+      "Bash(curl -s \"http://localhost:8000/api/plots/stats?tenant=batbrazil&project=Default%20Project&model_name=Deforestation\")",
+      "Bash(python -c \"import json; json.load\\(open\\('/c/Users/rajasekhar.palleti/Downloads/deforestationqcflow/.claude/launch.json'\\)\\)\")",
+      "Bash(\"/c/Program Files/Python313/python.exe\" -c \"import json; json.load\\(open\\(r'C:\\\\Users\\\\rajasekhar.palleti\\\\Downloads\\\\deforestationqcflow\\\\.claude\\\\launch.json'\\)\\); print\\('valid JSON'\\)\")"
+    ]
+  }
+}
