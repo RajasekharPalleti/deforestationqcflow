@@ -1,5 +1,8 @@
 #!/usr/bin/env bash
 set -e
+set -m # job control on: the background job below gets its own process group,
+       # so stop_app.sh can kill the whole tree at once instead of just the
+       # top-level npm process (which would leave orphaned children behind).
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_DIR="$(dirname "$SCRIPT_DIR")"

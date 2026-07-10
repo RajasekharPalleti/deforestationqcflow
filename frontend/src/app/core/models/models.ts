@@ -80,16 +80,3 @@ export interface ManagedUser {
   role: string;
   display_name: string;
 }
-
-export type CardFilters = Record<string, { detection_status?: string; publish_status?: string; qa_status?: string }>;
-
-export const CARD_FILTERS: CardFilters = {
-  total: {},
-  published: { publish_status: 'published' },
-  unpublished: { publish_status: 'unpublished' },
-  published_deforested: { publish_status: 'published', detection_status: 'Deforested' },
-  published_not_deforested: { publish_status: 'published', detection_status: 'Not Deforested' },
-  qa_pending: { qa_status: 'Pending', publish_status: 'unpublished' },
-  qa_done: {},
-  ready_publish: {},
-};

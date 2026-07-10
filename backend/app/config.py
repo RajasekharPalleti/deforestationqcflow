@@ -28,22 +28,6 @@ MODELS = {
                        "No Change Visible", "Urban / Built-up Area",
                        "Water Body Misclassification", "Seasonality Effect", "Other"],
     },
-    "Yield Prediction": {
-        "icon": "🌾",
-        "description": "Crop yield forecasting",
-        "review_columns": ["predicted_yield_tha", "growth_stage", "ndvi_avg", "et_mm"],
-        "qa_statuses": ["Pending", "Approved", "Needs Review", "Rejected"],
-        "ds_statuses": ["Pending", "Approved", "Rejected"],
-        "qa_reasons": ["", "Outlier Value", "Data Gap", "Model Drift", "Ground Truth Mismatch", "Other"],
-    },
-    "Crop Health": {
-        "icon": "🩺",
-        "description": "NDVI-based crop stress detection",
-        "review_columns": ["health_index", "stress_level", "affected_area_pct", "alert_type"],
-        "qa_statuses": ["Pending", "Confirmed", "False Alert", "Inconclusive"],
-        "ds_statuses": ["Pending", "Confirmed", "Rejected"],
-        "qa_reasons": ["", "Cloud Contamination", "Sensor Artifact", "Seasonal Stress", "Other"],
-    },
 }
 
 CARD_FILTERS = {

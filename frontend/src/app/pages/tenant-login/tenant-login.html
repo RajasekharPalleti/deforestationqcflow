@@ -18,21 +18,13 @@
   <div class="form-panel">
     <div class="form-card">
       <img src="cropin-cloud-logo.svg" alt="Cropin" class="brand-logo" />
-      <p class="subtitle">Log into Your Cropin Cloud Account</p>
+      <p class="subtitle">Log into Your META Account</p>
 
       <div class="field">
         <label>Environment</label>
         <select [ngModel]="environment()" (ngModelChange)="environment.set($event)">
           <option *ngFor="let e of environments" [value]="e">{{ e }}</option>
         </select>
-      </div>
-
-      <div class="field">
-        <label>Tenant Name</label>
-        <input type="text" [ngModel]="tenant()" (ngModelChange)="onTenantInput($event)" autocomplete="off" />
-        <div class="field-hint" *ngIf="tenant() && !tenantValid()">
-          Lowercase letters and numbers only, no spaces or symbols.
-        </div>
       </div>
 
       <div class="field">
@@ -56,8 +48,6 @@
       <button class="login-btn" (click)="login()" [disabled]="!canSubmit() || authenticating()">
         {{ authenticating() ? 'Logging in…' : 'Login' }}
       </button>
-
-      <p class="forgot-link">Forgot Password?</p>
 
       <button type="button" class="back-btn" (click)="backToMain()">Back to main page</button>
     </div>

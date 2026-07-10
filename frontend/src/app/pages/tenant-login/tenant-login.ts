@@ -21,7 +21,6 @@ export class TenantLogin implements OnInit {
 
   environments = ENVIRONMENTS;
   environment = signal(this.workspace.environment() || ENVIRONMENTS[0]);
-  tenant = signal(this.workspace.tenant());
   username = signal(this.tenantAuth.username());
   password = signal('');
   showPassword = signal(false);
@@ -29,22 +28,13 @@ export class TenantLogin implements OnInit {
   authenticating = computed(() => this.tenantAuth.authenticating());
   authError = computed(() => this.tenantAuth.authError());
 
-  /** Lowercase letters/digits only — no spaces or symbols (e.g. "qazone7"). */
-  tenantValid = computed(() => /^[a-z0-9]+$/.test(this.tenant()));
-  canSubmit = computed(
-    () => this.tenantValid() && this.username().trim().length > 0 && this.password().length > 0
-  );
+  canSubmit = computed(() => this.username().trim().length > 0 && this.password().length > 0);
 
   ngOnInit(): void {
     // Already authenticated (e.g. navigated here directly) — nothing to do here.
     if (this.tenantAuth.accessToken()) {
       this.router.navigateByUrl('/overview');
     }
-  }
-
-  /** Strip anything that isn't a lowercase letter or digit as the user types, live. */
-  onTenantInput(raw: string): void {
-    this.tenant.set(raw.toLowerCase().replace(/[^a-z0-9]/g, ''));
   }
 
   togglePasswordVisibility(): void {
@@ -60,8 +50,7 @@ export class TenantLogin implements OnInit {
     if (!this.canSubmit()) return;
     try {
       this.workspace.setEnvironment(this.environment());
-      this.workspace.setTenant(this.tenant());
-      await this.tenantAuth.login(this.environment(), this.tenant(), this.username(), this.password());
+      await this.tenantAuth.login(this.environment(), this.username(), this.password());
       this.password.set('');
       this.router.navigateByUrl('/overview');
     } catch {

@@ -1,1 +1,4 @@
 node_modules/
+batch_files/app.pid
+batch_files/app.log
+.DS_Store

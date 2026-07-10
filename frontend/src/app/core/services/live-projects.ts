@@ -1,6 +1,7 @@
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { Injectable, inject, signal } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
+import { describeHttpError } from './http-error';
 import { TenantAuthService } from './tenant-auth';
 
 export interface LiveProject {
@@ -13,11 +14,11 @@ interface ProjectsFilterResponse {
   last?: boolean;
 }
 
-const PAGE_SIZE = 30;
+const PAGE_SIZE = 50;
 
 /**
- * Fetches real projects for the authenticated tenant from the farm service,
- * paginated for infinite-scroll style lazy loading.
+ * Fetches the tenant's real projects from the farm service, paginated for
+ * infinite-scroll style lazy loading in the project-picker dropdown.
  * Source: cropin_automation_techops project, static/js/deforestation.js — fetchProjects().
  */
 @Injectable({ providedIn: 'root' })
@@ -104,12 +105,7 @@ export class LiveProjectsService {
   }
 
   private describeError(err: unknown): string {
-    if (err instanceof HttpErrorResponse) {
-      if (err.status === 401) return 'Session expired — please log in again.';
-      if (err.status === 0) return 'Could not reach the project service (network/CORS error).';
-      return `Failed to load projects: ${err.status} ${err.statusText}`;
-    }
-    return err instanceof Error ? err.message : 'Failed to load projects.';
+    return describeHttpError(err, 'the project service');
   }
 
   /** A 401 from the project API means the token is no longer valid — end the session. */

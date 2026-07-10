@@ -194,30 +194,24 @@
   width: 100%;
   padding: 14px;
   margin-top: 12px;
-  border: none;
+  border: 1px solid #e0e0e0;
   border-radius: 6px;
-  background: #1e2733;
-  color: #ffffff;
+  background: #ffffff;
+  color: #1e2733;
   font-size: 15px;
   font-weight: 600;
   cursor: pointer;
 
   &:hover:not(:disabled) {
-    background: #14876f;
+    background: #76be28;
+    border-color: #76be28;
+    color: #ffffff;
   }
 
   &:disabled {
     opacity: 0.55;
     cursor: not-allowed;
   }
-}
-
-.forgot-link {
-  text-align: center;
-  color: #8a8f98;
-  font-size: 13px;
-  margin-top: 20px;
-  cursor: default;
 }
 
 .back-btn {
@@ -235,8 +229,8 @@
   cursor: pointer;
 
   &:hover {
-    background: #14876f;
-    border-color: #14876f;
+    background: #76be28;
+    border-color: #76be28;
     color: #ffffff;
   }
 }

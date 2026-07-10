@@ -33,7 +33,7 @@ export class ProjectPicker {
   filteredProjects = computed(() => {
     const q = this.search().trim().toLowerCase();
     const items = this.liveProjects.projects();
-    return q ? items.filter((p) => p.name.toLowerCase().includes(q)) : items;
+    return q ? items.filter((p) => p.name.toLowerCase().includes(q) || String(p.id).includes(q)) : items;
   });
 
   toggle(): void {
@@ -51,13 +51,19 @@ export class ProjectPicker {
     }
   }
 
-  isSelected(name: string): boolean {
-    return this.workspace.selectedProjects().includes(name);
+  /** Shows the project's name where known, falling back to the raw id (e.g. before its page has loaded). */
+  projectLabel(id: string): string {
+    const found = this.liveProjects.projects().find((p) => String(p.id) === id);
+    return found ? found.name : id;
   }
 
-  toggleSelection(name: string, event: Event): void {
+  isSelected(id: string | number): boolean {
+    return this.workspace.selectedProjects().includes(String(id));
+  }
+
+  toggleSelection(id: string | number, event: Event): void {
     event.stopPropagation();
-    const ok = this.workspace.toggleProjectSelection(name);
+    const ok = this.workspace.toggleProjectSelection(String(id));
     if (!ok) {
       // The click already flipped the native checkbox to "checked" before we could
       // reject it — force the DOM back in sync since Angular's [checked] binding
@@ -68,10 +74,15 @@ export class ProjectPicker {
     }
   }
 
-  makeActive(name: string): void {
-    if (this.isSelected(name)) {
-      this.workspace.setActiveProject(name);
+  makeActive(id: string | number): void {
+    if (this.isSelected(id)) {
+      this.workspace.setActiveProject(String(id));
     }
+  }
+
+  clearAll(event: Event): void {
+    event.stopPropagation();
+    this.workspace.setProjects([]);
   }
 
   onListScroll(event: Event): void {

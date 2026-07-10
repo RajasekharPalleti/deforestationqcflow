@@ -1,27 +1,62 @@
-.filters-grid {
+.cards-row {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 12px;
-  margin-top: 12px;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 8px;
 }
 
-.date-row {
-  grid-template-columns: repeat(2, 1fr);
-}
-
-.field {
+.card {
+  border-radius: 8px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  border: 1px solid #e5e7eb;
+  border-top: 3px solid;
+  padding: 14px 8px;
+  text-align: center;
   display: flex;
   flex-direction: column;
   gap: 4px;
+  background: #ffffff;
+  font-family: inherit;
+  cursor: pointer;
 
-  label {
-    font-size: 12px;
+  &:hover {
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+  }
+
+  &.card-active {
+    background: #f0f7ea;
+    border-color: #76be28;
+  }
+
+  .value {
+    font-size: 26px;
+    font-weight: 700;
+    color: #225356;
+  }
+
+  .label {
+    font-size: 11px;
+    color: #868585;
+  }
+}
+
+.plots-section {
+  margin-top: 4px;
+}
+
+.plots-nav {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  justify-content: flex-start;
+  margin-bottom: 12px;
+
+  .page-indicator {
+    font-size: 13px;
     color: #868585;
   }
 }
 
 .table-wrap {
-  max-height: 420px;
+  max-height: 480px;
   overflow: auto;
-  margin-top: 8px;
 }

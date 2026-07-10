@@ -1,158 +1,98 @@
 import { CommonModule } from '@angular/common';
-import { Component, computed, effect, inject, signal } from '@angular/core';
-import { FormsModule } from '@angular/forms';
-import { CARD_FILTERS, ModelConfig, Plot, Stats } from '../../core/models/models';
-import { ConfigService } from '../../core/services/config';
-import { downloadCsv } from '../../core/services/csv';
-import { PlotsService } from '../../core/services/plots';
+import { Component, computed, inject } from '@angular/core';
+import { ALL_STATUSES_TAB, DashboardPlot, DashboardPlotsService } from '../../core/services/dashboard-plots';
+import { DashboardStats, DashboardStatsService } from '../../core/services/dashboard-stats';
+import { TenantAuthService } from '../../core/services/tenant-auth';
 import { WorkspaceService } from '../../core/services/workspace';
-import { StatCards } from '../../shared/stat-cards/stat-cards';
+
+interface CardDef {
+  key: keyof DashboardStats;
+  label: string;
+  color: string;
+  /** Tab value sent to the plots API when this card is clicked. */
+  tab: string;
+}
+
+const CARDS: CardDef[] = [
+  { key: 'totalPlots', label: 'Total Plots', color: '#2E7D32', tab: ALL_STATUSES_TAB },
+  { key: 'publishedPlots', label: 'Published', color: '#0097A7', tab: 'PUBLISHED' },
+  { key: 'unpublishedPlots', label: 'Unpublished', color: '#EF6C00', tab: 'UNPUBLISHED' },
+  { key: 'pendingQaPlots', label: 'Pending QA', color: '#F9A825', tab: 'PENDING_QA' },
+  { key: 'qaDoneAwaitingDsPlots', label: 'QA Done / Await DS', color: '#7B1FA2', tab: 'QA_DONE_AWAIT_DS' },
+  { key: 'readyToPublishPlots', label: 'Ready to Publish', color: '#76be28', tab: 'READY_TO_PUBLISH' },
+];
 
 function titleCase(s: string): string {
-  return s.replace(/_/g, ' ').replace(/\w\S*/g, (w) => w[0].toUpperCase() + w.slice(1));
+  const spaced = s.replace(/([a-z])([A-Z])/g, '$1 $2');
+  return spaced.replace(/\w\S*/g, (w) => w[0].toUpperCase() + w.slice(1));
 }
 
 @Component({
   selector: 'app-overview',
   standalone: true,
-  imports: [CommonModule, FormsModule, StatCards],
+  imports: [CommonModule],
   templateUrl: './overview.html',
   styleUrl: './overview.scss',
 })
 export class Overview {
-  private configService = inject(ConfigService);
-  private plotsService = inject(PlotsService);
   workspace = inject(WorkspaceService);
+  tenantAuth = inject(TenantAuthService);
+  dashboardStats = inject(DashboardStatsService);
+  dashboardPlots = inject(DashboardPlotsService);
 
-  modelCfg = signal<ModelConfig | null>(null);
-  stats = signal<Stats | null>(null);
-  plots = signal<Plot[]>([]);
-  loading = signal(false);
-  filtersExpanded = signal(false);
+  cards = CARDS;
 
-  detectionFilter = signal('All');
-  publishFilter = signal('All');
-  qaFilter = signal('All');
-  plotIdSearch = signal('');
-  dateFrom = signal('');
-  dateTo = signal('');
+  /** Column list derived from whatever keys the API actually returns. */
+  plotColumns = computed(() => {
+    const rows = this.dashboardPlots.plots();
+    return rows.length ? Object.keys(rows[0]) : [];
+  });
 
-  detectionOptions = computed(() =>
-    this.workspace.modelName() === 'Deforestation' ? ['All', 'Deforested', 'Not Deforested'] : ['All']
-  );
-  qaOptions = computed(() => ['All', ...(this.modelCfg()?.qa_statuses ?? [])]);
-  reviewColumns = computed(() => this.modelCfg()?.review_columns ?? []);
-  reviewColumnTitles = computed(() => this.reviewColumns().map(titleCase));
-
-  constructor() {
-    // Reload model config whenever the selected model changes.
-    effect(() => {
-      const modelName = this.workspace.modelName();
-      if (!modelName) return;
-      this.configService.getConfig().then((cfg) => this.modelCfg.set(cfg.models[modelName]));
-    });
-
-    // When a stat card is clicked, seed the filter bar from CARD_FILTERS and expand it.
-    effect(() => {
-      const active = this.workspace.activeCard();
-      const preset = active ? CARD_FILTERS[active] ?? {} : {};
-      this.detectionFilter.set(preset.detection_status ?? 'All');
-      this.publishFilter.set(preset.publish_status ?? 'All');
-      this.qaFilter.set(preset.qa_status ?? 'All');
-      this.filtersExpanded.set(!!active);
-    });
-
-    // Refetch whenever workspace or filters change.
-    effect(() => {
-      const tenant = this.workspace.tenant();
-      const project = this.workspace.activeProject();
-      const modelName = this.workspace.modelName();
-      const version = this.workspace.dataVersion();
-      const activeCard = this.workspace.activeCard();
-      const detection = this.detectionFilter();
-      const publish = this.publishFilter();
-      const qa = this.qaFilter();
-      const search = this.plotIdSearch();
-      const from = this.dateFrom();
-      const to = this.dateTo();
-      if (!tenant || !project || !modelName) return;
-      void version;
-      this.refresh(tenant, project, modelName, activeCard, {
-        detection_status: detection,
-        publish_status: publish,
-        qa_status: qa,
-        plot_id_search: search,
-        date_from: from,
-        date_to: to,
-      });
-    });
+  columnTitle(key: string): string {
+    return titleCase(key);
   }
 
-  private async refresh(
-    tenant: string,
-    project: string,
-    modelName: string,
-    activeCard: string | null,
-    filters: Record<string, string>
-  ): Promise<void> {
-    this.loading.set(true);
+  valueFor(key: CardDef['key']): number {
+    return this.dashboardStats.stats()?.[key] ?? 0;
+  }
+
+  isCardActive(card: CardDef): boolean {
+    return this.dashboardPlots.tab() === card.tab;
+  }
+
+  /** Shown when a load has completed but returned zero rows — names the active filter, not a generic "nothing here yet". */
+  noPlotsMessage(): string {
+    const card = this.cards.find((c) => c.tab === this.dashboardPlots.tab());
+    return card ? `No plots available for ${card.label}.` : 'No plots available for the selected filter.';
+  }
+
+  /** Clicking a card fetches the same plots API, filtered to that card's status(es). */
+  async selectCard(card: CardDef): Promise<void> {
+    const baseUrl = this.tenantAuth.baseUrl();
+    const tenant = this.workspace.tenant();
+    const token = this.tenantAuth.accessToken();
+    const projectIds = this.workspace.selectedProjects();
+    if (!baseUrl || !tenant || !token || projectIds.length === 0) return;
     try {
-      const stats = await this.plotsService.getStats(tenant, project, modelName);
-      this.stats.set(stats);
-      if (stats.total === 0) {
-        this.plots.set([]);
-        return;
-      }
-      let plots = await this.plotsService.getPlots(tenant, project, modelName, filters);
-      if (activeCard === 'qa_done') {
-        plots = plots.filter((p) => !['Pending', 'Auto-Approved'].includes(p.qa_status) && p.ds_status === 'Pending');
-      } else if (activeCard === 'ready_publish') {
-        plots = plots.filter((p) => p.final_status && p.publish_status === 'unpublished');
-      }
-      this.plots.set(plots);
-    } finally {
-      this.loading.set(false);
+      await this.dashboardPlots.load(baseUrl, tenant, token, projectIds, 0, card.tab);
+    } catch {
+      // dashboardPlots.error() already carries the message
     }
   }
 
-  clearFilters(): void {
-    this.detectionFilter.set('All');
-    this.publishFilter.set('All');
-    this.qaFilter.set('All');
-    this.plotIdSearch.set('');
-    this.dateFrom.set('');
-    this.dateTo.set('');
-    this.workspace.clearActiveCard();
+  cellValue(row: DashboardPlot, key: string): string {
+    const v = (row as unknown as Record<string, unknown>)[key];
+    if (v === null || v === undefined) return '—';
+    if (typeof v === 'boolean') return v ? 'Yes' : 'No';
+    if (typeof v === 'object') return JSON.stringify(v);
+    return String(v);
   }
 
-  rowData(p: Plot): Record<string, unknown> {
-    const md = JSON.parse(p.model_data || '{}');
-    const row: Record<string, unknown> = {
-      'Plot ID': p.plot_id,
-      'Farmer ID': p.farmer_id,
-      Farmer: p.farmer_name,
-      Lat: p.lat,
-      Lon: p.lon,
-      Detection: p.detection_status,
-      Flag: p.pipeline_flag,
-      Publish: p.publish_status,
-      'QA Status': p.qa_status,
-      'DS Status': p.ds_status,
-      'Final Status': p.final_status || '—',
-    };
-    for (const col of this.reviewColumns()) {
-      row[titleCase(col)] = md[col] ?? '—';
-    }
-    return row;
+  prevPage(): void {
+    this.dashboardPlots.prev();
   }
 
-  tableRows = computed(() => this.plots().map((p) => this.rowData(p)));
-  tableColumns = computed(() => (this.tableRows().length ? Object.keys(this.tableRows()[0]) : []));
-
-  downloadCsv(): void {
-    const t = this.workspace.tenant();
-    const p = this.workspace.activeProject();
-    const m = this.workspace.modelName();
-    downloadCsv(this.tableRows(), `${t}_${p}_${m}_plots.csv`);
+  nextPage(): void {
+    this.dashboardPlots.next();
   }
 }

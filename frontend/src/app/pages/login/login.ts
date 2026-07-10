@@ -20,8 +20,8 @@ export class Login implements OnInit {
   private auth = inject(AuthService);
   private router = inject(Router);
   private tenantAuth = inject(TenantAuthService);
-  private liveProjects = inject(LiveProjectsService);
   private workspace = inject(WorkspaceService);
+  private liveProjects = inject(LiveProjectsService);
 
   departments = signal<string[]>([]);
   teamMembers = signal<Record<string, string[]>>({});
@@ -62,8 +62,8 @@ export class Login implements OnInit {
       // name change within the same department keeps it intact.
       if (previousDepartment && previousDepartment !== this.department()) {
         this.tenantAuth.logout();
-        this.liveProjects.reset();
         this.workspace.setTenant('');
+        this.liveProjects.reset();
       }
 
       this.router.navigateByUrl('/overview');

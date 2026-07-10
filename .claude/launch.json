@@ -9,14 +9,14 @@
     },
     {
       "name": "backend-api",
-      "runtimeExecutable": "C:\\Users\\rajasekhar.palleti\\Downloads\\deforestationqcflow\\backend\\.venv\\Scripts\\python.exe",
-      "runtimeArgs": ["-m", "uvicorn", "app.main:app", "--port", "8000", "--app-dir", "C:\\Users\\rajasekhar.palleti\\Downloads\\deforestationqcflow\\backend"],
+      "runtimeExecutable": "/Users/rajasekhar.palleti/Projects/deforestationqcflow/backend/.venv/bin/python",
+      "runtimeArgs": ["-m", "uvicorn", "app.main:app", "--port", "8000", "--app-dir", "/Users/rajasekhar.palleti/Projects/deforestationqcflow/backend"],
       "port": 8000
     },
     {
       "name": "frontend-app",
-      "runtimeExecutable": "C:\\Program Files\\nodejs\\node.exe",
-      "runtimeArgs": ["-e", "process.chdir('C:/Users/rajasekhar.palleti/Downloads/deforestationqcflow/frontend'); process.argv=[process.argv[0],'ng','serve']; require('C:/Users/rajasekhar.palleti/Downloads/deforestationqcflow/frontend/node_modules/@angular/cli/bin/ng.js');"],
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["start", "--prefix", "/Users/rajasekhar.palleti/Projects/deforestationqcflow/frontend"],
       "port": 4200
     }
   ]

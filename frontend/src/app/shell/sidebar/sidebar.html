@@ -13,9 +13,66 @@
 
 <div class="workspace-summary">
   <span class="env-badge">{{ workspace.environment() }}</span>
-  <span class="tenant-name">{{ workspace.tenant() }}</span>
+  <input
+    class="tenant-name"
+    type="text"
+    placeholder="Tenant name"
+    autocomplete="off"
+    [ngModel]="tenantInput()"
+    (ngModelChange)="onTenantInput($event)"
+    (blur)="commitTenant()"
+    (keydown.enter)="commitTenant()"
+  />
 </div>
-<div class="field-error" *ngIf="liveProjects.error()">{{ liveProjects.error() }}</div>
+
+<p class="section-hint">🔑 Login here to fetch the Base URL &amp; Projects for this tenant</p>
+
+<div class="field">
+  <div class="field-caption">Username</div>
+  <input
+    type="text"
+    placeholder="Username"
+    autocomplete="off"
+    [ngModel]="usernameInput()"
+    (ngModelChange)="usernameInput.set($event)"
+  />
+</div>
+
+<div class="field">
+  <div class="field-caption">Password</div>
+  <div class="password-row">
+    <input
+      [type]="showPassword() ? 'text' : 'password'"
+      placeholder="Password"
+      autocomplete="off"
+      [ngModel]="passwordInput()"
+      (ngModelChange)="passwordInput.set($event)"
+      (keydown.enter)="fetchToken()"
+    />
+    <button type="button" class="show-toggle" (click)="togglePasswordVisibility()">
+      {{ showPassword() ? 'HIDE' : 'SHOW' }}
+    </button>
+  </div>
+</div>
+
+<button class="btn btn-block" (click)="fetchToken()" [disabled]="!canFetchToken()"
+        title="Requires tenant, username, and password — also auto-fills Base URL">
+  {{ tenantAuth.authenticating() ? 'Fetching token...' : '🔑 Get Token' }}
+</button>
+<p class="error" *ngIf="tenantAuth.authError()">{{ tenantAuth.authError() }}</p>
+
+<div class="field">
+  <div class="field-caption">Base URL</div>
+  <input
+    type="text"
+    placeholder="https://…"
+    autocomplete="off"
+    [ngModel]="baseUrlInput()"
+    (ngModelChange)="onBaseUrlInput($event)"
+    (blur)="commitBaseUrl()"
+    (keydown.enter)="commitBaseUrl()"
+  />
+</div>
 
 <div class="field">
   <div class="field-caption">Project</div>
@@ -25,15 +82,22 @@
 <div class="field">
   <div class="field-caption">Model</div>
   <select [ngModel]="workspace.modelName()" (ngModelChange)="onModelChange($event)">
-    <option *ngFor="let m of modelKeys()" [value]="m">{{ modelIcon(m) }} {{ m }}</option>
+    <option *ngFor="let m of modelKeys" [value]="m">{{ modelIcon(m) }} {{ m }}</option>
   </select>
 </div>
 
-<button class="btn btn-block" (click)="sync()" [disabled]="syncing()"
-        title="Pull latest data from backend for this tenant / project / model">
-  {{ syncing() ? 'Syncing...' : '🔄 Sync from API' }}
+<button class="btn btn-block" (click)="loadDashboard()" [disabled]="!canLoadDashboard() || syncing()"
+        title="Requires tenant, base URL, and at least one project id">
+  {{ syncing() ? 'Loading...' : '📥 Load Dashboard' }}
 </button>
 <div class="sync-message" *ngIf="syncMessage()">{{ syncMessage() }}</div>
+<p class="error" *ngIf="dashboardStats.error()">{{ dashboardStats.error() }}</p>
+
+<button class="btn btn-block" (click)="loadPlots()" [disabled]="!canLoadDashboard() || dashboardPlots.loading()"
+        title="Requires tenant, base URL, and at least one project id">
+  {{ dashboardPlots.loading() ? 'Loading...' : '📋 Load Plots' }}
+</button>
+<p class="error" *ngIf="dashboardPlots.error()">{{ dashboardPlots.error() }}</p>
 
 <hr />
 

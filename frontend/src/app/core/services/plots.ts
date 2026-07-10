@@ -18,12 +18,6 @@ export interface PlotFilters {
 export class PlotsService {
   private http = inject(HttpClient);
 
-  sync(tenant: string, project: string, model_name: string): Promise<void> {
-    return firstValueFrom(
-      this.http.post<void>(`${API_BASE}/plots/sync`, { tenant, project, model_name })
-    );
-  }
-
   getPlots(tenant: string, project: string, model_name: string, filters: PlotFilters = {}): Promise<Plot[]> {
     let params = new HttpParams().set('tenant', tenant).set('project', project).set('model_name', model_name);
     for (const [k, v] of Object.entries(filters)) {

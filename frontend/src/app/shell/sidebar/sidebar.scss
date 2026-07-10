@@ -79,12 +79,26 @@ hr {
   }
 
   .tenant-name {
+    flex: 1;
+    min-width: 0;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 6px;
+    padding: 3px 8px;
     font-size: 13px;
     color: #f1f5f5;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+
+    &::placeholder {
+      color: rgba(241, 245, 245, 0.5);
+    }
   }
+}
+
+.section-hint {
+  font-size: 11px;
+  color: #b9c7c7;
+  margin: 0 0 8px;
+  font-style: italic;
 }
 
 .field {
@@ -149,11 +163,29 @@ hr {
   }
 }
 
-.field-error {
-  font-size: 11px;
-  color: #ff8a80;
-  margin-top: 4px;
-  margin-bottom: 10px;
+.password-row {
+  position: relative;
+  display: flex;
+  align-items: center;
+
+  input {
+    flex: 1;
+    padding-right: 48px !important;
+  }
+
+  .show-toggle {
+    position: absolute;
+    right: 6px;
+    background: none;
+    border: none;
+    color: #b9c7c7;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    cursor: pointer;
+    padding: 4px;
+    font-family: inherit;
+  }
 }
 
 .btn {
@@ -181,11 +213,22 @@ hr {
 .btn-block {
   width: 100%;
   display: block;
+  margin-bottom: 8px;
+
+  &:last-child {
+    margin-bottom: 0;
+  }
 }
 
 .sync-message {
   font-size: 11px;
   color: #9adb4b;
+  margin-top: 4px;
+}
+
+.error {
+  font-size: 11px;
+  color: #ff8a80;
   margin-top: 4px;
 }
 

@@ -1,34 +1,45 @@
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { Injectable, inject, signal } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
+import { describeHttpError } from './http-error';
 
 /**
- * SSO base URLs per environment.
- * Source: cropin_automation_techops project, static/js/execution.js — SSO_CONFIG.
+ * Token-generation URLs per environment. Fixed to the "cropin" realm —
+ * no tenant code needed to obtain a token.
  * Auth pattern: Keycloak resource-owner-password-credentials grant.
  */
-export const SSO_BASE_URLS: Record<string, string> = {
+export const TOKEN_URLS: Record<string, string> = {
+  QA: 'https://v2sso-gcp.cropin.co.in/auth/realms/cropin/protocol/openid-connect/token',
+  UAT: 'https://v2sso-uat-gcp.cropin.co.in/auth/realms/cropin/protocol/openid-connect/token',
+  PROD: 'https://sso.sg.cropin.in/auth/realms/cropin/protocol/openid-connect/token',
+};
+
+export const ENVIRONMENTS = Object.keys(TOKEN_URLS);
+
+/**
+ * Token-generation hosts for the dashboard's "Get Token" action — distinct from
+ * TOKEN_URLS above: these use the tenant code as the realm, not the fixed
+ * "cropin" realm the main meta login uses.
+ */
+const TENANT_TOKEN_HOSTS: Record<string, string> = {
   QA: 'https://v2sso-gcp.cropin.co.in',
   UAT: 'https://v2sso-uat-gcp.cropin.co.in',
   PROD: 'https://sso.sg.cropin.in',
 };
 
-export const ENVIRONMENTS = Object.keys(SSO_BASE_URLS);
-
-/**
- * Tenant-config lookup hosts and fallbacks for auto-resolving the app's own
- * API base URL (appHost) after login — no manual entry needed.
- * Source: cropin_automation_techops project, static/js/deforestation.js — doLogin().
- */
-const CONFIG_HOST: Record<string, string> = {
+/** Per-tenant config lookup — used only to auto-fill Base URL after a dashboard token fetch. */
+const TENANT_CONFIG_HOSTS: Record<string, string> = {
   QA: 'https://intl-v2.cropin.co.in',
   UAT: 'https://intl-v2uat.cropin.co.in',
+  PROD: 'https://intl-cloud.cropin.in',
 };
-const FALLBACK_HOST: Record<string, string> = {
-  QA: 'https://au-v2-gcp.cropin.co.in',
-  UAT: 'https://au-v2uat-gcp.cropin.co.in',
-  PROD: 'https://cloud.cropin.in',
-};
+
+/** Trim, strip a trailing slash, and default to https:// when no scheme was typed. */
+export function normalizeBaseUrl(raw: string): string {
+  const trimmed = raw.trim().replace(/\/+$/, '');
+  if (!trimmed) return '';
+  return /^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`;
+}
 
 const STORAGE_KEY = 'cropin_tenant_session';
 
@@ -38,6 +49,7 @@ interface TokenResponse {
 }
 
 interface TenantConfigResponse {
+  webHost?: string;
   appHost?: string;
   [key: string]: unknown;
 }
@@ -45,25 +57,35 @@ interface TenantConfigResponse {
 /** Everything needed to restore a logged-in session across page reloads. Never includes the passcode. */
 interface PersistedSession {
   accessToken: string;
+  projectsToken: string;
   baseUrl: string;
+  appHost: string;
   username: string;
   environment: string;
-  tenant: string;
 }
 
 @Injectable({ providedIn: 'root' })
 export class TenantAuthService {
   private http = inject(HttpClient);
 
+  /** Main meta login's token — used by Load Dashboard/Load Plots (needs the meta-admin role). */
   readonly accessToken = signal<string | null>(null);
+  /**
+   * The sidebar "Get Token" flow's own token — used only by the live projects
+   * list. Kept fully separate from accessToken: a tenant-scoped user token has
+   * no meta-admin role, so if it overwrote accessToken it would break Load
+   * Dashboard/Load Plots (a real bug this fixed).
+   */
+  readonly projectsToken = signal<string | null>(null);
   readonly authenticating = signal(false);
   readonly authError = signal('');
-  /** Tenant's own app API base URL — resolved automatically after login. */
+  /** Tenant's own app API base URL — entered manually in the dashboard. */
   readonly baseUrl = signal('');
+  /** The tenant's appHost (from config lookup) — used only by the live projects list, which lives on a different host than baseUrl/webHost. */
+  readonly appHost = signal('');
   readonly username = signal('');
-  /** Environment/tenant restored from a persisted session — read once by the sidebar on startup. */
-  readonly restoredEnvironment = signal('');
-  readonly restoredTenant = signal('');
+  /** Environment for the active/restored session — set on login and on restore. */
+  readonly environment = signal('');
 
   constructor() {
     this.restore();
@@ -74,36 +96,38 @@ export class TenantAuthService {
       const raw = localStorage.getItem(STORAGE_KEY);
       if (!raw) return;
       const data = JSON.parse(raw) as PersistedSession;
-      if (!data.accessToken || !data.baseUrl) return;
+      if (!data.accessToken) return;
       this.accessToken.set(data.accessToken);
-      this.baseUrl.set(data.baseUrl);
+      this.projectsToken.set(data.projectsToken || null);
+      this.baseUrl.set(data.baseUrl ?? '');
+      this.appHost.set(data.appHost ?? '');
       this.username.set(data.username ?? '');
-      this.restoredEnvironment.set(data.environment ?? '');
-      this.restoredTenant.set(data.tenant ?? '');
+      this.environment.set(data.environment ?? '');
     } catch {
       localStorage.removeItem(STORAGE_KEY);
     }
   }
 
-  private persist(environment: string, tenant: string): void {
+  private persist(): void {
     const session: PersistedSession = {
       accessToken: this.accessToken() ?? '',
+      projectsToken: this.projectsToken() ?? '',
       baseUrl: this.baseUrl(),
+      appHost: this.appHost(),
       username: this.username(),
-      environment,
-      tenant,
+      environment: this.environment(),
     };
     localStorage.setItem(STORAGE_KEY, JSON.stringify(session));
   }
 
-  async login(environment: string, tenant: string, username: string, passcode: string): Promise<void> {
+  async login(environment: string, username: string, passcode: string): Promise<void> {
     this.authenticating.set(true);
     this.authError.set('');
     this.accessToken.set(null);
     this.baseUrl.set('');
     try {
-      const ssoBase = SSO_BASE_URLS[environment];
-      if (!ssoBase) throw new Error(`Unknown environment: ${environment}`);
+      const tokenUrl = TOKEN_URLS[environment];
+      if (!tokenUrl) throw new Error(`Unknown environment: ${environment}`);
 
       const body = new URLSearchParams({
         username,
@@ -114,19 +138,16 @@ export class TenantAuthService {
       });
 
       const res = await firstValueFrom(
-        this.http.post<TokenResponse>(
-          `${ssoBase}/auth/realms/${encodeURIComponent(tenant)}/protocol/openid-connect/token`,
-          body.toString(),
-          { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } }
-        )
+        this.http.post<TokenResponse>(tokenUrl, body.toString(), {
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        })
       );
 
       if (!res.access_token) throw new Error('No access_token in response.');
       this.accessToken.set(res.access_token);
       this.username.set(username);
-
-      this.baseUrl.set(await this.resolveBaseUrl(environment, tenant));
-      this.persist(environment, tenant);
+      this.environment.set(environment);
+      this.persist();
     } catch (err) {
       this.authError.set(this.describeError(err));
       throw err;
@@ -135,31 +156,92 @@ export class TenantAuthService {
     }
   }
 
-  /** Auto-resolve the tenant's app host — PROD is fixed, QA/UAT look it up, falling back on failure. */
-  private async resolveBaseUrl(environment: string, tenant: string): Promise<string> {
-    if (environment === 'PROD') return FALLBACK_HOST['PROD'];
+  /**
+   * Dashboard-side "Get Token" — unlike login() above, this hits the tenant's
+   * own realm (not the fixed "cropin" one) and stores the result in
+   * projectsToken, never accessToken: a tenant-scoped user token has no
+   * meta-admin role, so Load Dashboard/Load Plots must keep using whatever
+   * came from the main login. Also looks up the tenant's config to auto-fill
+   * Base URL from its webHost, and separately track appHost (a different
+   * host, used only by the live projects list). A config-lookup failure
+   * doesn't fail the token fetch — both just stay whatever they were.
+   */
+  async loginWithTenant(environment: string, tenant: string, username: string, passcode: string): Promise<void> {
+    this.authenticating.set(true);
+    this.authError.set('');
+    this.projectsToken.set(null);
+    try {
+      const host = TENANT_TOKEN_HOSTS[environment];
+      if (!host) throw new Error(`Unknown environment: ${environment}`);
+      const tokenUrl = `${host}/auth/realms/${encodeURIComponent(tenant)}/protocol/openid-connect/token`;
 
-    const configHost = CONFIG_HOST[environment];
-    if (configHost) {
-      try {
-        const cfg = await firstValueFrom(
-          this.http.get<TenantConfigResponse>(`${configHost}/${encodeURIComponent(tenant)}`, {
-            headers: { accept: 'application/json, text/plain, */*', 'accept-language': 'en-GB,en;q=0.5' },
-          })
-        );
-        if (cfg.appHost) return cfg.appHost.replace(/\/$/, '');
-      } catch {
-        // fall through to the hardcoded fallback host below
-      }
+      const body = new URLSearchParams({
+        username,
+        password: passcode,
+        grant_type: 'password',
+        client_id: 'resource_server',
+        client_secret: 'resource_server',
+      });
+
+      const res = await firstValueFrom(
+        this.http.post<TokenResponse>(tokenUrl, body.toString(), {
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        })
+      );
+
+      if (!res.access_token) throw new Error('No access_token in response.');
+      this.projectsToken.set(res.access_token);
+      this.username.set(username);
+      this.environment.set(environment);
+      this.persist();
+    } catch (err) {
+      this.authError.set(this.describeError(err));
+      throw err;
+    } finally {
+      this.authenticating.set(false);
     }
-    return FALLBACK_HOST[environment] ?? FALLBACK_HOST['QA'];
+
+    await this.fetchTenantConfig(environment, tenant);
+  }
+
+  /** Best-effort — a failed config lookup shouldn't undo an otherwise-successful token fetch. */
+  private async fetchTenantConfig(environment: string, tenant: string): Promise<void> {
+    const configHost = TENANT_CONFIG_HOSTS[environment];
+    if (!configHost) return;
+    try {
+      const cfg = await firstValueFrom(
+        this.http.get<TenantConfigResponse>(`${configHost}/${encodeURIComponent(tenant)}`, {
+          headers: { accept: 'application/json, text/plain, */*' },
+        })
+      );
+      if (cfg.webHost) this.setBaseUrl(cfg.webHost);
+      if (cfg.appHost) {
+        this.appHost.set(normalizeBaseUrl(cfg.appHost));
+        this.persist();
+      }
+    } catch {
+      // leave Base URL/appHost as-is — the user can still enter Base URL manually
+    }
+  }
+
+  /**
+   * The app's API base URL is entered manually in the dashboard, not auto-detected.
+   * Normalized so a missing "https://" (which would silently turn every request
+   * into a relative path against this app's own origin, not the real API) or a
+   * stray trailing slash doesn't masquerade as a network/CORS failure.
+   */
+  setBaseUrl(baseUrl: string): void {
+    this.baseUrl.set(normalizeBaseUrl(baseUrl));
+    this.persist();
   }
 
   /** Ends the session — explicit logout, or forced out after a 401 from a project API call. */
   logout(): void {
     this.accessToken.set(null);
+    this.projectsToken.set(null);
     this.authError.set('');
     this.baseUrl.set('');
+    this.appHost.set('');
     this.username.set('');
     localStorage.removeItem(STORAGE_KEY);
   }
@@ -168,9 +250,7 @@ export class TenantAuthService {
     if (err instanceof HttpErrorResponse) {
       const desc = (err.error as { error_description?: string })?.error_description;
       if (desc) return desc;
-      if (err.status === 0) return 'Could not reach the authentication server (network/CORS error).';
-      return `Auth failed: ${err.status} ${err.statusText}`;
     }
-    return err instanceof Error ? err.message : 'Authentication failed.';
+    return describeHttpError(err, 'the authentication server');
   }
 }

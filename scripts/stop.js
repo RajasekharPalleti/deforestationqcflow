@@ -76,6 +76,32 @@ function killUnixPort(port) {
   return true;
 }
 
+// Orchestrator/wrapper processes (concurrently, the backend launcher script,
+// npm --prefix frontend) never hold the port themselves, so killUnixPort alone
+// can leave them running as orphans — which can then respawn a worker that
+// reclaims the port right after this script exits. Kill by command-line
+// pattern first so nothing is left behind to do that.
+const UNIX_PATTERNS = [
+  'concurrently -n BACKEND,FRONTEND',
+  'scripts/start-backend.js',
+  'scripts/setup-backend.js',
+  'uvicorn app.main:app',
+  'npm --prefix frontend',
+  'ng serve (frontend)', // scoped to this project's process title — a bare "ng serve" would also match other Angular projects on the machine
+];
+
+function killUnixPatterns() {
+  for (const pattern of UNIX_PATTERNS) {
+    try {
+      execSync(`pkill -9 -f "${pattern}"`, { stdio: 'pipe' });
+    } catch {
+      /* pkill exits non-zero when nothing matched — ignore */
+    }
+  }
+}
+
+if (!isWindows) killUnixPatterns();
+
 for (const port of PORTS) {
   const kill = isWindows ? killWindowsPort : killUnixPort;
   const first = kill(port);
@@ -84,3 +110,5 @@ for (const port of PORTS) {
   const second = kill(port);
   if (!first && !second) console.log(`Nothing running on port ${port}`);
 }
+
+if (!isWindows) killUnixPatterns();
