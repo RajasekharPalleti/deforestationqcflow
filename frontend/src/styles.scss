@@ -89,6 +89,12 @@ code {
     border-color: #f3c2bd;
     color: #c62828;
   }
+
+  &.warning {
+    background: #fff8e1;
+    border-color: #f4dfa0;
+    color: #8a6d00;
+  }
 }
 
 .success {
@@ -97,6 +103,10 @@ code {
 
 .error {
   color: #c62828;
+}
+
+.warning {
+  color: #8a6d00;
 }
 
 .caption {

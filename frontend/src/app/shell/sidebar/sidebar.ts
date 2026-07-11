@@ -105,6 +105,21 @@ export class Sidebar implements OnInit {
         this.liveProjects.reset();
       }
     });
+
+    // Auto-load the dashboard/plots as soon as everything needed is in place —
+    // the user shouldn't have to click Load Dashboard/Load Plots by hand.
+    // Each guard goes false again the moment its own load succeeds, so this
+    // won't loop, but it re-fires if projects/tenant change and the data gets reset.
+    effect(() => {
+      if (this.canLoadDashboard() && !this.dashboardStats.stats() && !this.syncing()) {
+        void this.loadDashboard();
+      }
+    });
+    effect(() => {
+      if (this.canLoadDashboard() && !this.dashboardPlots.hasLoaded() && !this.dashboardPlots.loading()) {
+        void this.loadPlots();
+      }
+    });
   }
 
   ngOnInit(): void {

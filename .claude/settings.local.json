@@ -67,7 +67,14 @@
       "Bash(curl -s -i -X OPTIONS https://au-v2-gcp.cropin.co.in/meta/api/deforestation/qc/dashboard/qazone7 -H 'Origin: http://localhost:4200' -H 'Access-Control-Request-Method: POST' -H 'Access-Control-Request-Headers: authorization,content-type' --max-time 10)",
       "Bash(curl -s -i -X OPTIONS https://au-v2.cropin.co.in/meta/api/deforestation/qc/dashboard/qazone7 -H 'Origin: http://localhost:4200' -H 'Access-Control-Request-Method: POST' -H 'Access-Control-Request-Headers: authorization,content-type' --max-time 10)",
       "Bash(curl -s \"https://intl-v2.cropin.co.in/qazone7\" -H \"accept: application/json, text/plain, */*\" --max-time 10)",
-      "Bash(curl -s -i -X OPTIONS 'https://au-v2.cropin.co.in/services/farm/api/projects/filter?page=0&size=50' -H 'Origin: http://localhost:4200' -H 'Access-Control-Request-Method: POST' -H 'Access-Control-Request-Headers: authorization,content-type' --max-time 10)"
+      "Bash(curl -s -i -X OPTIONS 'https://au-v2.cropin.co.in/services/farm/api/projects/filter?page=0&size=50' -H 'Origin: http://localhost:4200' -H 'Access-Control-Request-Method: POST' -H 'Access-Control-Request-Headers: authorization,content-type' --max-time 10)",
+      "Bash(git config *)",
+      "Bash(git credential-osxkeychain *)",
+      "Bash(gh --version)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\\\\n\" http://localhost:4200/ --max-time 5)",
+      "Bash(ps -p 67275 -o pid,command)",
+      "Bash(ps -p 67277 -o pid,command)",
+      "Bash(curl -s -o /dev/null -w \"frontend:%{http_code}\\\\n\" http://localhost:4200/ --max-time 3)"
     ]
   }
 }
