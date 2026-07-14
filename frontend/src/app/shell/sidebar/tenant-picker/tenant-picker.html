@@ -1,0 +1,37 @@
+<div class="picker">
+  <button type="button" class="picker-box" (click)="toggle()">
+    <span class="selected-label" *ngIf="selectedLabel(); else placeholder">{{ selectedLabel() }}</span>
+    <ng-template #placeholder><span class="placeholder">Select tenant…</span></ng-template>
+    <span class="chevron">{{ open() ? '▴' : '▾' }}</span>
+  </button>
+
+  <div class="panel" *ngIf="open()">
+    <div class="panel-header">
+      <input
+        type="text"
+        class="search-input"
+        placeholder="Search tenants…"
+        [ngModel]="search()"
+        (ngModelChange)="search.set($event)"
+      />
+    </div>
+
+    <div class="list">
+      <div class="empty" *ngIf="liveTenants.error()">{{ liveTenants.error() }}</div>
+      <div class="empty" *ngIf="!liveTenants.error() && liveTenants.loading()">Loading tenants…</div>
+      <div class="empty" *ngIf="!liveTenants.error() && !liveTenants.loading() && filteredTenants().length === 0">
+        No tenants found.
+      </div>
+
+      <div
+        class="row"
+        *ngFor="let t of filteredTenants()"
+        [class.row-selected]="isSelected(t.code)"
+        (click)="select(t.code)"
+      >
+        <span class="row-name">{{ t.name }}</span>
+        <span class="row-code">{{ t.code }}</span>
+      </div>
+    </div>
+  </div>
+</div>

@@ -1,18 +1,10 @@
 <div class="publish-board">
   <div class="plots-nav">
-    <input
-      *ngIf="plotColumns().length > 0"
-      type="text"
-      class="search-input"
-      placeholder="Search by CA name…"
-      [ngModel]="search()"
-      (ngModelChange)="search.set($event)"
-    />
     <div class="nav-actions">
       <button class="btn btn-primary" (click)="openConfirm()" [disabled]="selectedCount() === 0">
         🚀 Publish Selected ({{ selectedCount() }})
       </button>
-      <button class="btn" (click)="clearSelection()" [disabled]="selectedCount() === 0">✖ Clear</button>
+      <button class="btn" (click)="clearSelection()" [disabled]="selectedCount() === 0">✖ Clear Selected Plots</button>
       <button class="btn" (click)="prevPage()" [disabled]="!dashboardPlots.hasPrev() || dashboardPlots.loading()">
         ◀ Prev
       </button>
@@ -26,6 +18,50 @@
     </div>
   </div>
 
+  <div class="filters-bar">
+    <div class="filter-field">
+      <label>CA Name</label>
+      <input
+        type="text"
+        placeholder="Croppable area name"
+        [ngModel]="caNameDraft()"
+        (ngModelChange)="caNameDraft.set($event)"
+      />
+    </div>
+    <div class="filter-field">
+      <label>Deforestation Status</label>
+      <select [ngModel]="deforestationStatusDraft()" (ngModelChange)="deforestationStatusDraft.set($event)">
+        <option *ngFor="let s of deforestationStatusOptions" [value]="s">{{ s }}</option>
+      </select>
+    </div>
+    <div class="filter-field">
+      <label>QC Status</label>
+      <select [ngModel]="qcStatusDraft()" (ngModelChange)="qcStatusDraft.set($event)">
+        <option *ngFor="let s of qcFilterStatusOptions" [value]="s">{{ s }}</option>
+      </select>
+    </div>
+    <div class="filter-field">
+      <label>Publish Status</label>
+      <select [ngModel]="publishStatusDraft()" (ngModelChange)="publishStatusDraft.set($event)">
+        <option *ngFor="let s of publishStatusOptions" [value]="s">{{ s }}</option>
+      </select>
+    </div>
+    <div class="filter-field">
+      <label>From Last Run Date</label>
+      <input type="date" [ngModel]="fromDateDraft()" (ngModelChange)="fromDateDraft.set($event)" />
+    </div>
+    <div class="filter-field">
+      <label>To Last Run Date</label>
+      <input type="date" [ngModel]="toDateDraft()" (ngModelChange)="toDateDraft.set($event)" />
+    </div>
+    <div class="filter-actions">
+      <button class="btn btn-primary" (click)="applyFilters()" [disabled]="dashboardPlots.loading()">
+        🔍 Filter Data
+      </button>
+      <button class="btn" (click)="clearFilters()" [disabled]="dashboardPlots.loading()">✖ Clear Filters</button>
+    </div>
+  </div>
+
   <div class="info-box error" *ngIf="dashboardPlots.error()">{{ dashboardPlots.error() }}</div>
   <div class="info-box" *ngIf="dashboardPlots.loading()">Loading plots…</div>
   <div
@@ -34,11 +70,8 @@
   >
     Nothing ready to publish. ✅
   </div>
-  <div class="info-box" *ngIf="plotColumns().length > 0 && filteredPlots().length === 0">
-    No plots match “{{ search() }}”.
-  </div>
 
-  <div class="table-wrap" *ngIf="filteredPlots().length > 0">
+  <div class="table-wrap" *ngIf="plotColumns().length > 0">
     <table>
       <thead>
         <tr>
@@ -49,7 +82,7 @@
         </tr>
       </thead>
       <tbody>
-        <tr *ngFor="let row of filteredPlots()">
+        <tr *ngFor="let row of dashboardPlots.plots()">
           <td class="select-col">
             <input type="checkbox" [checked]="isRowSelected(row)" (change)="toggleRowSelection(row)" />
           </td>

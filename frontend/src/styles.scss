@@ -23,6 +23,12 @@ h4 {
   letter-spacing: -0.01em;
 }
 
+/* Page-top titles start flush with the shell's own top padding, so they land
+   in the same visual row as the floated Logout button next to them. */
+h2:first-child {
+  margin-top: 0;
+}
+
 hr {
   border: none;
   border-top: 1px solid #e5e7eb;

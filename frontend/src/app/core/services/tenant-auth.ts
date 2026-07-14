@@ -161,10 +161,8 @@ export class TenantAuthService {
    * own realm (not the fixed "cropin" one) and stores the result in
    * projectsToken, never accessToken: a tenant-scoped user token has no
    * meta-admin role, so Load Dashboard/Load Plots must keep using whatever
-   * came from the main login. Also looks up the tenant's config to auto-fill
-   * Base URL from its webHost, and separately track appHost (a different
-   * host, used only by the live projects list). A config-lookup failure
-   * doesn't fail the token fetch — both just stay whatever they were.
+   * came from the main login. Base URL is no longer fetched from here — see
+   * fetchBaseUrlForTenant(), which uses the meta token instead.
    */
   async loginWithTenant(environment: string, tenant: string, username: string, passcode: string): Promise<void> {
     this.authenticating.set(true);
@@ -200,18 +198,22 @@ export class TenantAuthService {
     } finally {
       this.authenticating.set(false);
     }
-
-    await this.fetchTenantConfig(environment, tenant);
   }
 
-  /** Best-effort — a failed config lookup shouldn't undo an otherwise-successful token fetch. */
-  private async fetchTenantConfig(environment: string, tenant: string): Promise<void> {
+  /**
+   * Auto-fills Base URL (and appHost, used only by the live projects list) as soon as a tenant is
+   * picked — authenticated with the meta token from the main login, not the tenant-scoped one.
+   * Best-effort: a failed lookup just leaves Base URL as whatever it was (the user can still type it
+   * in manually).
+   */
+  async fetchBaseUrlForTenant(environment: string, tenant: string): Promise<void> {
     const configHost = TENANT_CONFIG_HOSTS[environment];
-    if (!configHost) return;
+    const metaToken = this.accessToken();
+    if (!configHost || !metaToken) return;
     try {
       const cfg = await firstValueFrom(
         this.http.get<TenantConfigResponse>(`${configHost}/${encodeURIComponent(tenant)}`, {
-          headers: { accept: 'application/json, text/plain, */*' },
+          headers: { accept: 'application/json, text/plain, */*', Authorization: `Bearer ${metaToken}` },
         })
       );
       if (cfg.webHost) this.setBaseUrl(cfg.webHost);

@@ -86,7 +86,14 @@
       "Bash(ps -p 14336 -o pid,ppid,command)",
       "Bash(ps -p 19559 -o pid,ppid,command)",
       "Bash(curl -s http://localhost:8000/api/config)",
-      "Bash(python3 -c \"import json,sys; d=json.load\\(sys.stdin\\); print\\(d['departments']\\)\")"
+      "Bash(python3 -c \"import json,sys; d=json.load\\(sys.stdin\\); print\\(d['departments']\\)\")",
+      "Bash(rm -rf /Users/rajasekhar.palleti/Projects/deforestationqcflow/frontend/dist)",
+      "Bash(.venv/bin/python -c \"from app.main import app; print\\('backend imports OK, routes:', [r.path for r in app.routes]\\)\")",
+      "Bash(.venv/bin/python -c \"from app.main import app; print\\('backend OK'\\)\")",
+      "Bash(curl -s -X POST http://localhost:8000/api/activity -H \"Content-Type: application/json\" -d '{\"tenant\":\"qazone7\",\"project\":\"123\",\"model_name\":\"Deforestation\",\"plot_id\":\"TEST-PLOT-1\",\"username\":\"test\",\"action\":\"QA Review\",\"details\":\"DEFORESTED / Forest Boundary \\(success\\)\"}')",
+      "Bash(curl -s \"http://localhost:8000/api/activity?tenant=qazone7&model_name=Deforestation\")",
+      "Bash(.venv/bin/python -c ' *)",
+      "Bash(grep -n \"^h1,\\\\|^h2\\\\|h1,$\" -A6 /Users/rajasekhar.palleti/Projects/deforestationqcflow/frontend/src/styles.scss)"
     ]
   }
 }

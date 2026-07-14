@@ -1,7 +1,9 @@
 import { CommonModule } from '@angular/common';
 import { Component, computed, effect, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { DashboardPlot, DashboardPlotsService } from '../../core/services/dashboard-plots';
+import { ActivityService } from '../../core/services/activity';
+import { AuthService } from '../../core/services/auth';
+import { DashboardPlot, DashboardPlotsService, PlotFilters } from '../../core/services/dashboard-plots';
 import { DeforestationPublishService, PublishOutcome } from '../../core/services/deforestation-publish';
 import { TenantAuthService } from '../../core/services/tenant-auth';
 import { WorkspaceService } from '../../core/services/workspace';
@@ -13,10 +15,18 @@ const READY_TO_PUBLISH_TAB = 'READY_TO_PUBLISH';
 const CLICKABLE_COLUMNS = new Set(['croppableAreaId', 'croppableAreaName']);
 /** How many plot rows to show in the confirm dialog before collapsing the rest into a "+N" hover tooltip. */
 const VISIBLE_CONFIRM_PLOT_COUNT = 2;
+const DEFORESTATION_STATUS_OPTIONS = ['ALL', 'DEFORESTED', 'NOT_DEFORESTED'];
+const FILTER_QC_STATUS_OPTIONS = ['ALL', 'PENDING', 'DEFORESTED', 'NOT_DEFORESTED', 'INCONCLUSIVE'];
+const PUBLISH_STATUS_OPTIONS = ['ALL', 'PUBLISHED', 'UNPUBLISHED'];
 
 function titleCase(s: string): string {
   const spaced = s.replace(/([a-z])([A-Z])/g, '$1 $2');
   return spaced.replace(/\w\S*/g, (w) => w[0].toUpperCase() + w.slice(1));
+}
+
+/** <input type="date"> gives YYYY-MM-DD — the API wants an ISO timestamp, e.g. 2026-07-01T00:00:00.000Z. */
+function toApiDate(isoDate: string): string {
+  return `${isoDate}T00:00:00.000Z`;
 }
 
 /** One failed plot, enriched with its name for display (the API only returns the id). */
@@ -45,6 +55,8 @@ export class PublishBoard {
   tenantAuth = inject(TenantAuthService);
   dashboardPlots = inject(DashboardPlotsService);
   deforestationPublish = inject(DeforestationPublishService);
+  private auth = inject(AuthService);
+  private activityService = inject(ActivityService);
 
   /** Checkbox selections, keyed by croppableAreaId so they survive page navigation. */
   private selectedPlots = signal<Map<number, DashboardPlot>>(new Map());
@@ -76,19 +88,20 @@ export class PublishBoard {
     return rows.length ? Object.keys(rows[0]) : [];
   });
 
-  /** Search box — filters the current page's rows by croppable area name (client-side, current page only). */
-  search = signal('');
+  /** Filter panel — draft values, only sent to the API once "Filter Data" is clicked. */
+  deforestationStatusOptions = DEFORESTATION_STATUS_OPTIONS;
+  qcFilterStatusOptions = FILTER_QC_STATUS_OPTIONS;
+  publishStatusOptions = PUBLISH_STATUS_OPTIONS;
+  caNameDraft = signal('');
+  deforestationStatusDraft = signal('ALL');
+  qcStatusDraft = signal('ALL');
+  publishStatusDraft = signal('ALL');
+  fromDateDraft = signal('');
+  toDateDraft = signal('');
 
-  /** Rows on the current page that match the search box, or every row when it's empty. */
-  filteredPlots = computed(() => {
-    const q = this.search().trim().toLowerCase();
-    const rows = this.dashboardPlots.plots();
-    return q ? rows.filter((r) => (r.croppableAreaName ?? '').toLowerCase().includes(q)) : rows;
-  });
-
-  /** Whether every currently-visible (filtered) row is selected — drives the header checkbox. */
+  /** Whether every row on the current (server-filtered) page is selected — drives the header checkbox. */
   allOnPageSelected = computed(() => {
-    const rows = this.filteredPlots();
+    const rows = this.dashboardPlots.plots();
     const selected = this.selectedPlots();
     return rows.length > 0 && rows.every((r) => selected.has(r.croppableAreaId));
   });
@@ -137,9 +150,9 @@ export class PublishBoard {
     this.selectedPlots.set(next);
   }
 
-  /** Selects/deselects every currently-visible (filtered) row, leaving selections on other pages/rows untouched. */
+  /** Selects/deselects every row on the current page, leaving selections on other pages untouched. */
   toggleSelectAllOnPage(): void {
-    const rows = this.filteredPlots();
+    const rows = this.dashboardPlots.plots();
     const next = new Map(this.selectedPlots());
     if (this.allOnPageSelected()) {
       rows.forEach((r) => next.delete(r.croppableAreaId));
@@ -164,6 +177,35 @@ export class PublishBoard {
   /** Re-fetches the current page from the API — lets the user pull fresh results after a publish lands. */
   refreshList(): void {
     void this.dashboardPlots.goToPage(this.dashboardPlots.page());
+  }
+
+  /** Sends the current filter panel draft to the API, replacing whatever's currently loaded (page resets to 0). */
+  applyFilters(): void {
+    const baseUrl = this.tenantAuth.baseUrl();
+    const tenant = this.workspace.tenant();
+    const token = this.tenantAuth.accessToken();
+    const projectIds = this.workspace.selectedProjects();
+    if (!baseUrl || !tenant || !token || projectIds.length === 0) return;
+    const filters: PlotFilters = {
+      croppableAreaName: this.caNameDraft(),
+      deforestationStatus: this.deforestationStatusDraft(),
+      qcStatus: this.qcStatusDraft(),
+      publishStatus: this.publishStatusDraft(),
+      fromLastRunDate: this.fromDateDraft() ? toApiDate(this.fromDateDraft()) : undefined,
+      toLastRunDate: this.toDateDraft() ? toApiDate(this.toDateDraft()) : undefined,
+    };
+    void this.dashboardPlots.load(baseUrl, tenant, token, projectIds, 0, READY_TO_PUBLISH_TAB, filters);
+  }
+
+  /** Resets every filter field and reloads unfiltered. */
+  clearFilters(): void {
+    this.caNameDraft.set('');
+    this.deforestationStatusDraft.set('ALL');
+    this.qcStatusDraft.set('ALL');
+    this.publishStatusDraft.set('ALL');
+    this.fromDateDraft.set('');
+    this.toDateDraft.set('');
+    this.applyFilters();
   }
 
   /** Opens the "are you sure" dialog for the checked rows. */
@@ -218,6 +260,24 @@ export class PublishBoard {
             : `❌ ${result.message}`
       );
       this.confirming.set(false);
+
+      // Real per-plot activity trail — unlike review, the publish API tells us exactly which plots
+      // failed and why, so each entry logs its own actual outcome instead of one shared batch result.
+      const username = this.auth.user()?.username ?? '';
+      const project = this.workspace.selectedProjects().join(',');
+      const failedById = new Map(result.failedPlots.map((f) => [f.croppableAreaId, f]));
+      for (const plot of plots) {
+        const failure = failedById.get(plot.croppableAreaId);
+        void this.activityService.logActivity({
+          tenant: companyCode,
+          project,
+          model_name: this.workspace.modelName(),
+          plot_id: plot.croppableAreaName,
+          username,
+          action: failure ? 'Publish Failed' : 'Publish',
+          details: failure ? failure.errorMessage || failure.errorCode || 'Failed to publish.' : 'Published.',
+        });
+      }
       if (result.outcome !== 'failed') {
         // Drop only the plots that actually published — failed ones stay selected so the user can retry.
         const failedIds = new Set(result.failedPlots.map((f) => f.croppableAreaId));

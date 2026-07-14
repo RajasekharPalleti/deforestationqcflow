@@ -26,14 +26,6 @@ def hash_password(pw: str) -> str:
     return hashlib.sha256(pw.encode()).hexdigest()
 
 
-def log_action(conn, tenant, project, model_name, plot_id, username, action, details=""):
-    """Write to activity log using the caller's existing connection. Caller commits."""
-    conn.execute(
-        "INSERT INTO activity_log (tenant,project,model_name,plot_id,username,action,details)"
-        " VALUES (?,?,?,?,?,?,?)",
-        (tenant, project, model_name, plot_id, username, action, details))
-
-
 def init_db():
     conn = get_db()
     conn.executescript("""
@@ -42,36 +34,6 @@ def init_db():
         password_hash TEXT NOT NULL,
         role          TEXT NOT NULL,
         display_name  TEXT NOT NULL
-    );
-    CREATE TABLE IF NOT EXISTS plots (
-        id               INTEGER PRIMARY KEY AUTOINCREMENT,
-        tenant           TEXT NOT NULL,
-        project          TEXT NOT NULL,
-        model_name       TEXT NOT NULL,
-        plot_id          TEXT NOT NULL,
-        farmer_id        TEXT,
-        farmer_name      TEXT,
-        lat              REAL,
-        lon              REAL,
-        detection_status TEXT,
-        pipeline_flag    TEXT DEFAULT 'Clean',
-        publish_status   TEXT DEFAULT 'unpublished',
-        model_data       TEXT,
-        evidence_url     TEXT,
-        qa_status        TEXT DEFAULT 'Pending',
-        qa_reason        TEXT,
-        qa_comments      TEXT,
-        qa_user          TEXT,
-        qa_at            TEXT,
-        ds_status        TEXT DEFAULT 'Pending',
-        ds_comments      TEXT,
-        ds_user          TEXT,
-        ds_at            TEXT,
-        final_status     TEXT,
-        published_at     TEXT,
-        published_by     TEXT,
-        synced_at        TEXT DEFAULT CURRENT_TIMESTAMP,
-        UNIQUE(tenant, project, model_name, plot_id)
     );
     CREATE TABLE IF NOT EXISTS activity_log (
         id         INTEGER PRIMARY KEY AUTOINCREMENT,

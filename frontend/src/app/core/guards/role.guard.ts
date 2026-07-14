@@ -4,7 +4,7 @@ import { AuthService } from '../services/auth';
 
 /**
  * Mirrors the nav filtering in sidebar.ts:
- * QA -> Overview + QA Review only, DS -> Overview + DS Review + Publish,
+ * QA -> Overview + QA Review + Activity Log, DS -> Overview + DS Review + Publish + Activity Log,
  * PM/OTHER -> everything. Manage Users is PM-only.
  */
 const ALLOWED_ROLES: Record<string, string[]> = {
@@ -12,7 +12,7 @@ const ALLOWED_ROLES: Record<string, string[]> = {
   '/qa-review': ['PM', 'QA', 'OTHER'],
   '/ds-review': ['PM', 'DS', 'OTHER'],
   '/publish': ['PM', 'DS', 'OTHER'],
-  '/activity': ['PM', 'OTHER'],
+  '/activity': ['PM', 'QA', 'DS', 'OTHER'],
   '/manage-users': ['PM'],
 };
 

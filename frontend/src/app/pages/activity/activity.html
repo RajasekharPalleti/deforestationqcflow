@@ -1,6 +1,6 @@
-<h2>📋 Activity Log — {{ workspace.tenant() }} · {{ workspace.activeProject() }} / {{ workspace.modelName() }}</h2>
+<h2>📋 Activity Log — {{ workspace.tenant() }} ({{ workspace.environment() }}) / {{ workspace.modelName() }}</h2>
 
-<div class="info-box" *ngIf="logs().length === 0">No activity yet for this tenant / project / model.</div>
+<div class="info-box" *ngIf="logs().length === 0">No activity yet for this tenant / model.</div>
 
 <div class="table-wrap" *ngIf="logs().length > 0">
   <table>

@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, computed, inject } from '@angular/core';
+import { Component, computed, effect, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { AuthService } from '../../core/services/auth';
 import { ALL_STATUSES_TAB, DashboardPlotsService } from '../../core/services/dashboard-plots';
@@ -46,6 +46,20 @@ export class Overview {
     const role = this.auth.user()?.role;
     return role !== 'QA' && role !== 'DS';
   });
+
+  constructor() {
+    // dashboardPlots is a shared, app-wide instance — a prior visit to QA/DS Review, Publish, or a
+    // different card click can leave it pointed at some other tab. Every time this page is opened,
+    // default the view back to the Total Plots card rather than showing whatever was left over.
+    effect(() => {
+      const baseUrl = this.tenantAuth.baseUrl();
+      const tenant = this.workspace.tenant();
+      const token = this.tenantAuth.accessToken();
+      const projectIds = this.workspace.selectedProjects();
+      if (!baseUrl || !tenant || !token || projectIds.length === 0) return;
+      void this.selectCard(CARDS[0]);
+    });
+  }
 
   valueFor(key: CardDef['key']): number {
     return this.dashboardStats.stats()?.[key] ?? 0;

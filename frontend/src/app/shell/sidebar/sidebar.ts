@@ -6,9 +6,11 @@ import { AuthService } from '../../core/services/auth';
 import { DashboardPlotsService } from '../../core/services/dashboard-plots';
 import { DashboardStatsService } from '../../core/services/dashboard-stats';
 import { LiveProjectsService } from '../../core/services/live-projects';
+import { LiveTenantsService } from '../../core/services/live-tenants';
 import { TenantAuthService } from '../../core/services/tenant-auth';
 import { WorkspaceService } from '../../core/services/workspace';
 import { ProjectPicker } from './project-picker/project-picker';
+import { TenantPicker } from './tenant-picker/tenant-picker';
 
 interface NavItem {
   path: string;
@@ -31,7 +33,7 @@ const MODEL_ICON = '🪓';
 @Component({
   selector: 'app-sidebar',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink, RouterLinkActive, ProjectPicker],
+  imports: [CommonModule, FormsModule, RouterLink, RouterLinkActive, ProjectPicker, TenantPicker],
   templateUrl: './sidebar.html',
   styleUrl: './sidebar.scss',
 })
@@ -43,12 +45,11 @@ export class Sidebar implements OnInit {
   dashboardStats = inject(DashboardStatsService);
   dashboardPlots = inject(DashboardPlotsService);
   liveProjects = inject(LiveProjectsService);
+  liveTenants = inject(LiveTenantsService);
 
   syncing = signal(false);
   syncMessage = signal('');
 
-  /** Live-edited tenant text — only committed to the workspace on blur/Enter, not per keystroke. */
-  tenantInput = signal(this.workspace.tenant());
   /** Live-edited base URL text — only committed on blur/Enter. */
   baseUrlInput = signal(this.tenantAuth.baseUrl());
 
@@ -88,14 +89,55 @@ export class Sidebar implements OnInit {
 
   navItems = computed<NavItem[]>(() => {
     const role = this.auth.user()?.role;
-    if (role === 'QA') return [ALL_NAV[0], ALL_NAV[1]];
-    if (role === 'DS') return [ALL_NAV[0], ALL_NAV[2], ALL_NAV[3]];
+    if (role === 'QA') return [ALL_NAV[0], ALL_NAV[1], ALL_NAV[4]];
+    if (role === 'DS') return [ALL_NAV[0], ALL_NAV[2], ALL_NAV[3], ALL_NAV[4]];
     const items = [...ALL_NAV]; // PM and OTHER see everything
     if (role === 'PM') items.push({ path: '/manage-users', label: '👥 Manage Users' });
     return items;
   });
 
   constructor() {
+    // The meta-admin token from the main login also lists every tenant/customer,
+    // for the tenant picker dropdown — same token Load Dashboard/Load Plots use.
+    effect(() => {
+      const token = this.tenantAuth.accessToken();
+      const env = this.workspace.environment();
+      if (token && env) {
+        void this.liveTenants.fetchTenants(env, token);
+      } else {
+        this.liveTenants.reset();
+      }
+    });
+
+    // Picking a different tenant invalidates whatever was loaded for the old one —
+    // mirrors the previous manual-entry commitTenant() reset, now reacting to the
+    // workspace signal directly since selection happens inside TenantPicker.
+    let previousTenant = this.workspace.tenant();
+    effect(() => {
+      const tenant = this.workspace.tenant();
+      if (tenant === previousTenant) return;
+      previousTenant = tenant;
+      this.dashboardStats.reset();
+      this.dashboardPlots.reset();
+      this.liveProjects.reset();
+    });
+
+    // Base URL is looked up automatically as soon as a tenant is picked, using the
+    // meta token from the main login — no separate username/password step needed for it.
+    let lastBaseUrlFetchKey = '';
+    effect(() => {
+      const token = this.tenantAuth.accessToken();
+      const env = this.workspace.environment();
+      const tenant = this.workspace.tenant();
+      if (!token || !env || !tenant) return;
+      const key = `${env}|${tenant}`;
+      if (key === lastBaseUrlFetchKey) return;
+      lastBaseUrlFetchKey = key;
+      void this.tenantAuth.fetchBaseUrlForTenant(env, tenant).then(() => {
+        this.baseUrlInput.set(this.tenantAuth.baseUrl());
+      });
+    });
+
     // Once the sidebar's Get Token has run AND appHost is known (from the
     // tenant config lookup — a different host than Base URL/webHost), pull
     // the tenant's real projects for the picker dropdown. Uses projectsToken,
@@ -142,21 +184,6 @@ export class Sidebar implements OnInit {
     }
   }
 
-  /** Sanitize as the user types — does not touch workspace state yet. */
-  onTenantInput(raw: string): void {
-    this.tenantInput.set(raw.toLowerCase().replace(/[^a-z0-9]/g, ''));
-  }
-
-  /** Commit the tenant on blur/Enter — this is what resets project selection. */
-  commitTenant(): void {
-    if (this.tenantInput() !== this.workspace.tenant()) {
-      this.workspace.setTenant(this.tenantInput());
-      this.dashboardStats.reset();
-      this.dashboardPlots.reset();
-      this.liveProjects.reset();
-    }
-  }
-
   onBaseUrlInput(raw: string): void {
     this.baseUrlInput.set(raw.trim());
   }
@@ -174,9 +201,9 @@ export class Sidebar implements OnInit {
 
   /**
    * Fetches a fresh token scoped to the tenant already entered in the sidebar
-   * (a different realm/host than the main meta login), then auto-fills Base
-   * URL from that tenant's config — so the user never has to leave the
-   * dashboard to re-authenticate or look up their app host.
+   * (a different realm/host than the main meta login) — used for the live
+   * projects list. Base URL is unrelated to this now; it's fetched separately
+   * via the meta token as soon as a tenant is picked.
    */
   async fetchToken(): Promise<void> {
     if (!this.canFetchToken()) return;
@@ -188,7 +215,6 @@ export class Sidebar implements OnInit {
         this.passwordInput()
       );
       this.passwordInput.set('');
-      this.baseUrlInput.set(this.tenantAuth.baseUrl());
     } catch {
       // tenantAuth.authError() already carries the message
     }

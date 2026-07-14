@@ -22,19 +22,18 @@ export class Activity {
   constructor() {
     effect(() => {
       const tenant = this.workspace.tenant();
-      const project = this.workspace.activeProject();
       const modelName = this.workspace.modelName();
       const version = this.workspace.dataVersion();
-      if (!tenant || !project || !modelName) return;
+      if (!tenant || !modelName) return;
       void version;
-      this.refresh(tenant, project, modelName);
+      this.refresh(tenant, modelName);
     });
   }
 
-  private async refresh(tenant: string, project: string, modelName: string): Promise<void> {
+  private async refresh(tenant: string, modelName: string): Promise<void> {
     this.loading.set(true);
     try {
-      this.logs.set(await this.activityService.getActivity(tenant, project, modelName));
+      this.logs.set(await this.activityService.getActivity(tenant, modelName));
     } finally {
       this.loading.set(false);
     }

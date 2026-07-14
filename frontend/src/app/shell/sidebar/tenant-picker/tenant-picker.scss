@@ -1,0 +1,134 @@
+:host {
+  display: block;
+  position: relative;
+  flex: 1;
+  min-width: 0;
+}
+
+.picker-box {
+  width: 100%;
+  min-height: 32px;
+  background-color: rgba(255, 255, 255, 0.08);
+  color: #f1f5f5;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 6px;
+  padding: 4px 8px;
+  font-family: inherit;
+  font-size: 13px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  text-align: left;
+  transition: border-color 0.15s ease;
+
+  &:hover {
+    border-color: rgba(255, 255, 255, 0.35);
+  }
+
+  .selected-label {
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .placeholder {
+    color: rgba(241, 245, 245, 0.5);
+    flex: 1;
+  }
+
+  .chevron {
+    margin-left: auto;
+    color: rgba(241, 245, 245, 0.7);
+  }
+}
+
+.panel {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
+  z-index: 30;
+  overflow: hidden;
+  animation: tenant-panel-drop-in 0.12s ease;
+}
+
+@keyframes tenant-panel-drop-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.panel-header {
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.search-input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 8px 10px;
+  border: none;
+  font-family: inherit;
+  font-size: 13px;
+  color: #225356;
+
+  &:focus {
+    outline: none;
+  }
+}
+
+.list {
+  max-height: 240px;
+  overflow-y: auto;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 8px 10px;
+  cursor: pointer;
+  color: #225356;
+  font-size: 13px;
+  transition: background-color 0.1s ease;
+
+  &:hover {
+    background: #f5f7fa;
+  }
+
+  &.row-selected {
+    background: #f0f7ea;
+    font-weight: 600;
+  }
+
+  .row-name {
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .row-code {
+    flex-shrink: 0;
+    color: #868585;
+    font-size: 11px;
+  }
+}
+
+.empty {
+  padding: 12px 10px;
+  color: #868585;
+  font-size: 12px;
+  text-align: center;
+}
