@@ -13,13 +13,23 @@
     </select>
 
     <label class="field-label">Your Name</label>
-    <select [ngModel]="name()" (ngModelChange)="name.set($event)">
+    <select [ngModel]="name()" (ngModelChange)="onNameChange($event)">
       <option *ngFor="let n of namesForDepartment()" [value]="n">{{ n }}</option>
     </select>
 
+    <ng-container *ngIf="isOtherSelected()">
+      <label class="field-label">Enter Your Name</label>
+      <input
+        type="text"
+        [ngModel]="customName()"
+        (ngModelChange)="customName.set($event)"
+        placeholder="Your name"
+      />
+    </ng-container>
+
     <div class="spacer"></div>
 
-    <button class="btn-primary" (click)="continue()" [disabled]="submitting()">
+    <button class="btn-primary" (click)="continue()" [disabled]="submitting() || !canContinue()">
       {{ submitting() ? 'Signing in...' : 'Continue' }}
     </button>
 

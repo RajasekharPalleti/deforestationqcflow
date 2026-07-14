@@ -26,7 +26,7 @@ const ALL_NAV: NavItem[] = [
 /** Only one model exists right now — hardcoded here so the sidebar doesn't
  * need to hit /api/config just to populate a single-option dropdown. */
 const MODEL_NAME = 'Deforestation';
-const MODEL_ICON = '🌳';
+const MODEL_ICON = '🪓';
 
 @Component({
   selector: 'app-sidebar',
@@ -67,6 +67,11 @@ export class Sidebar implements OnInit {
 
   modelKeys = [MODEL_NAME];
 
+  /** Identifies the last tenant/baseUrl/project-selection combo actually loaded — lets the auto-load
+   *  effect below tell "nothing to do" apart from "selection changed, reload", without looping on its
+   *  own syncing() flag. */
+  private lastLoadedKey: string | null = null;
+
   /**
    * Load Dashboard / Load Plots are only meaningful once auth, tenant, and base
    * URL are all in place — and at least one project id is entered, since the
@@ -84,7 +89,7 @@ export class Sidebar implements OnInit {
   navItems = computed<NavItem[]>(() => {
     const role = this.auth.user()?.role;
     if (role === 'QA') return [ALL_NAV[0], ALL_NAV[1]];
-    if (role === 'DS') return [ALL_NAV[0], ALL_NAV[2]];
+    if (role === 'DS') return [ALL_NAV[0], ALL_NAV[2], ALL_NAV[3]];
     const items = [...ALL_NAV]; // PM and OTHER see everything
     if (role === 'PM') items.push({ path: '/manage-users', label: '👥 Manage Users' });
     return items;
@@ -106,19 +111,21 @@ export class Sidebar implements OnInit {
       }
     });
 
-    // Auto-load the dashboard/plots as soon as everything needed is in place —
-    // the user shouldn't have to click Load Dashboard/Load Plots by hand.
-    // Each guard goes false again the moment its own load succeeds, so this
-    // won't loop, but it re-fires if projects/tenant change and the data gets reset.
+    // Auto-load the dashboard/plots on demand — as soon as everything needed is in
+    // place, and again every time the project selection (or tenant/base URL) actually
+    // changes, so picking projects in the picker refreshes the dashboard without the
+    // user having to click Load Deforestation Dashboard by hand. Keyed on the inputs
+    // that matter (not on syncing()) so finishing a load doesn't re-trigger itself.
     effect(() => {
-      if (this.canLoadDashboard() && !this.dashboardStats.stats() && !this.syncing()) {
-        void this.loadDashboard();
-      }
-    });
-    effect(() => {
-      if (this.canLoadDashboard() && !this.dashboardPlots.hasLoaded() && !this.dashboardPlots.loading()) {
-        void this.loadPlots();
-      }
+      if (!this.canLoadDashboard() || this.syncing()) return;
+      const key = [
+        this.workspace.tenant(),
+        this.tenantAuth.baseUrl(),
+        [...this.workspace.selectedProjects()].sort().join(','),
+      ].join('|');
+      if (key === this.lastLoadedKey) return;
+      this.lastLoadedKey = key;
+      void this.loadDeforestationDashboard();
     });
   }
 
@@ -196,10 +203,7 @@ export class Sidebar implements OnInit {
   }
 
   /** Fetches real dashboard stats for the entered project ids, shown as cards on Overview. */
-  async loadDashboard(): Promise<void> {
-    if (!this.canLoadDashboard()) return;
-    this.syncing.set(true);
-    this.syncMessage.set('');
+  private async loadDashboard(): Promise<void> {
     try {
       await this.dashboardStats.load(
         this.tenantAuth.baseUrl(),
@@ -207,18 +211,13 @@ export class Sidebar implements OnInit {
         this.tenantAuth.accessToken()!,
         this.workspace.selectedProjects()
       );
-      this.syncMessage.set('Loaded.');
-      setTimeout(() => this.syncMessage.set(''), 2500);
     } catch {
       // dashboardStats.error() already carries the message
-    } finally {
-      this.syncing.set(false);
     }
   }
 
   /** Fetches page 0 of the real plot list for the entered project ids, shown as a table on Overview. */
-  async loadPlots(): Promise<void> {
-    if (!this.canLoadDashboard()) return;
+  private async loadPlots(): Promise<void> {
     try {
       await this.dashboardPlots.load(
         this.tenantAuth.baseUrl(),
@@ -229,6 +228,20 @@ export class Sidebar implements OnInit {
       );
     } catch {
       // dashboardPlots.error() already carries the message
+    }
+  }
+
+  /** Single sidebar action — loads both the summary cards and the plot list together. */
+  async loadDeforestationDashboard(): Promise<void> {
+    if (!this.canLoadDashboard()) return;
+    this.syncing.set(true);
+    this.syncMessage.set('');
+    try {
+      await Promise.all([this.loadDashboard(), this.loadPlots()]);
+      this.syncMessage.set('Loaded.');
+      setTimeout(() => this.syncMessage.set(''), 2500);
+    } finally {
+      this.syncing.set(false);
     }
   }
 

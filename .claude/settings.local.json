@@ -74,7 +74,19 @@
       "Bash(curl -s -o /dev/null -w \"%{http_code}\\\\n\" http://localhost:4200/ --max-time 5)",
       "Bash(ps -p 67275 -o pid,command)",
       "Bash(ps -p 67277 -o pid,command)",
-      "Bash(curl -s -o /dev/null -w \"frontend:%{http_code}\\\\n\" http://localhost:4200/ --max-time 3)"
+      "Bash(curl -s -o /dev/null -w \"frontend:%{http_code}\\\\n\" http://localhost:4200/ --max-time 3)",
+      "Bash(lsof -i :4200 -sTCP:LISTEN -n -P)",
+      "Bash(ps -p 14361 -o pid,ppid,command)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\\\\n\" http://localhost:4200/)",
+      "Bash(curl -s http://localhost:4200/main.js)",
+      "Bash(ls -la /proc/14361/fd 2>/dev/null || lsof -p 14361 2>/dev/null | grep -i \"log\\\\|txt\\\\|out\" )",
+      "Bash(npx ng *)",
+      "Bash(.venv/bin/python -c \"from app.config import DEPARTMENTS; from app.team_members import TEAM_MEMBERS; print\\(DEPARTMENTS\\); print\\(TEAM_MEMBERS\\)\")",
+      "Bash(lsof -i :8000 -sTCP:LISTEN -n -P)",
+      "Bash(ps -p 14336 -o pid,ppid,command)",
+      "Bash(ps -p 19559 -o pid,ppid,command)",
+      "Bash(curl -s http://localhost:8000/api/config)",
+      "Bash(python3 -c \"import json,sys; d=json.load\\(sys.stdin\\); print\\(d['departments']\\)\")"
     ]
   }
 }

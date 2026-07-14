@@ -36,6 +36,18 @@ export class ProjectPicker {
     return q ? items.filter((p) => p.name.toLowerCase().includes(q) || String(p.id).includes(q)) : items;
   });
 
+  /** Selected projects pulled out of the (possibly search-filtered) list so they're all visible together, instead of scattered across the full list. */
+  selectedProjectsList = computed(() => {
+    const selectedIds = new Set(this.workspace.selectedProjects());
+    return this.filteredProjects().filter((p) => selectedIds.has(String(p.id)));
+  });
+
+  /** Everything not currently selected, shown below the Selected section. */
+  unselectedProjectsList = computed(() => {
+    const selectedIds = new Set(this.workspace.selectedProjects());
+    return this.filteredProjects().filter((p) => !selectedIds.has(String(p.id)));
+  });
+
   toggle(): void {
     this.open.update((v) => !v);
   }

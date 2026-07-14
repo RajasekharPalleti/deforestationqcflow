@@ -8,6 +8,9 @@ import { LiveProjectsService } from '../../core/services/live-projects';
 import { TenantAuthService } from '../../core/services/tenant-auth';
 import { WorkspaceService } from '../../core/services/workspace';
 
+/** Lets someone not on the team list type their own name in instead. */
+const OTHER_OPTION = 'Other';
+
 @Component({
   selector: 'app-login',
   standalone: true,
@@ -27,9 +30,17 @@ export class Login implements OnInit {
   teamMembers = signal<Record<string, string[]>>({});
 
   department = signal('');
+  /** The dropdown's own value — either a known team member name, or the literal "Other". */
   name = signal('');
+  /** Typed in only when name() === 'Other'; this is what actually gets submitted in that case. */
+  customName = signal('');
 
-  namesForDepartment = computed(() => this.teamMembers()[this.department()] ?? []);
+  namesForDepartment = computed(() => [...(this.teamMembers()[this.department()] ?? []), OTHER_OPTION]);
+  isOtherSelected = computed(() => this.name() === OTHER_OPTION);
+  /** The name that will actually be sent to login — the typed-in name when "Other" is picked, otherwise the dropdown value. */
+  effectiveName = computed(() => (this.isOtherSelected() ? this.customName().trim() : this.name()));
+  canContinue = computed(() => this.effectiveName().length > 0);
+
   submitting = signal(false);
   error = signal('');
 
@@ -48,14 +59,23 @@ export class Login implements OnInit {
   onDepartmentChange(dept: string): void {
     this.department.set(dept);
     this.name.set(this.teamMembers()[dept]?.[0] ?? '');
+    this.customName.set('');
+  }
+
+  onNameChange(name: string): void {
+    this.name.set(name);
+    if (name !== OTHER_OPTION) {
+      this.customName.set('');
+    }
   }
 
   async continue(): Promise<void> {
+    if (!this.canContinue()) return;
     this.submitting.set(true);
     this.error.set('');
     try {
       const previousDepartment = this.auth.lastDepartment();
-      await this.auth.login(this.department(), this.name());
+      await this.auth.login(this.department(), this.effectiveName());
 
       // Switching department means a different team — the tenant/SSO session
       // (Environment/Tenant/Username/Passcode) doesn't carry over. A plain

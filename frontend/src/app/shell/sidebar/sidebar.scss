@@ -33,6 +33,7 @@
 
 .user-box {
   background: rgba(118, 190, 40, 0.15);
+  border: 1px solid rgba(118, 190, 40, 0.25);
   border-radius: 8px;
   padding: 10px 12px;
   margin-bottom: 12px;
@@ -119,6 +120,16 @@ hr {
     padding: 6px 8px;
     font-family: inherit;
     font-size: 13px;
+    transition: border-color 0.15s ease, background-color 0.15s ease;
+
+    &:hover:not(:disabled) {
+      border-color: rgba(255, 255, 255, 0.35);
+    }
+
+    &:focus-visible {
+      border-color: #76be28;
+      background-color: rgba(255, 255, 255, 0.12);
+    }
 
     /* The dropdown popup itself is rendered natively by the browser on a
        white background, regardless of the select's own styling above —
@@ -145,9 +156,19 @@ hr {
     font-family: inherit;
     font-size: 13px;
     box-sizing: border-box;
+    transition: border-color 0.15s ease, background-color 0.15s ease;
 
     &::placeholder {
       color: rgba(241, 245, 245, 0.5);
+    }
+
+    &:hover:not(:disabled) {
+      border-color: rgba(255, 255, 255, 0.35);
+    }
+
+    &:focus-visible {
+      border-color: #76be28;
+      background-color: rgba(255, 255, 255, 0.12);
     }
 
     &:disabled {
@@ -189,7 +210,7 @@ hr {
 }
 
 .btn {
-  border-radius: 4px;
+  border-radius: 6px;
   font-weight: 500;
   border: 1px solid rgba(255, 255, 255, 0.4);
   background-color: #ffffff;
@@ -197,11 +218,17 @@ hr {
   padding: 6px 10px;
   cursor: pointer;
   font-family: inherit;
+  transition:
+    background-color 0.15s ease,
+    border-color 0.15s ease,
+    color 0.15s ease,
+    box-shadow 0.15s ease;
 
   &:hover:not(:disabled) {
     background-color: #76be28;
     border-color: #76be28;
     color: #ffffff;
+    box-shadow: 0 2px 6px rgba(118, 190, 40, 0.35);
   }
 
   &:disabled {
@@ -241,10 +268,12 @@ hr {
 .nav-item {
   display: block;
   padding: 8px 10px;
-  border-radius: 4px;
+  border-radius: 6px;
   color: #f1f5f5;
   text-decoration: none;
   font-size: 14px;
+  border-left: 3px solid transparent;
+  transition: background-color 0.15s ease, border-color 0.15s ease;
 
   &:hover {
     background: rgba(255, 255, 255, 0.08);
@@ -252,6 +281,7 @@ hr {
 
   &.active {
     background: rgba(255, 255, 255, 0.15);
+    border-left-color: #76be28;
     font-weight: 600;
   }
 }

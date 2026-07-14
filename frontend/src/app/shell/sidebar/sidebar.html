@@ -1,6 +1,6 @@
 <div class="sidebar-header">
-  <div class="logo"><img src="orbitai-icon.svg" alt="" class="logo-icon" /> CropIn Validation</div>
-  <div class="subtitle">Model QA &amp; Publish Platform</div>
+  <div class="logo"><img src="orbitai-icon.svg" alt="" class="logo-icon" /> Cropin QC Validation Tool</div>
+  <div class="subtitle">internal app to validate the deforestation</div>
 </div>
 
 <div class="user-box" *ngIf="auth.user() as user">
@@ -86,17 +86,12 @@
   </select>
 </div>
 
-<button class="btn btn-block" (click)="loadDashboard()" [disabled]="!canLoadDashboard() || syncing()"
+<button class="btn btn-block" (click)="loadDeforestationDashboard()" [disabled]="!canLoadDashboard() || syncing()"
         title="Requires tenant, base URL, and at least one project id">
-  {{ syncing() ? 'Loading...' : '📥 Load Dashboard' }}
+  {{ syncing() ? 'Loading...' : '📥 Load Deforestation Dashboard' }}
 </button>
 <div class="sync-message" *ngIf="syncMessage()">{{ syncMessage() }}</div>
 <p class="error" *ngIf="dashboardStats.error()">{{ dashboardStats.error() }}</p>
-
-<button class="btn btn-block" (click)="loadPlots()" [disabled]="!canLoadDashboard() || dashboardPlots.loading()"
-        title="Requires tenant, base URL, and at least one project id">
-  {{ dashboardPlots.loading() ? 'Loading...' : '📋 Load Plots' }}
-</button>
 <p class="error" *ngIf="dashboardPlots.error()">{{ dashboardPlots.error() }}</p>
 
 <hr />
@@ -110,4 +105,4 @@
 <hr />
 <button class="btn btn-block" (click)="backToMain()">Back to main page</button>
 
-<div class="footer">v2.1 · Internal Only</div>
+<div class="footer">Version 1.0</div>

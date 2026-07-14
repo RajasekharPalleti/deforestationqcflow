@@ -14,16 +14,4 @@ TEAM_MEMBERS = {
         "Abhishek",
         "Guru",
     ],
-    "Product": [
-        "Mahesh",
-        "Swetabh",
-        "Aditi",
-    ],
-    "Others": [
-        "Ganesh",
-        "Prakhyath",
-        "Mahesh",
-        "Pritesh",
-        "Pavan",
-    ],
 }

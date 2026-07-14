@@ -48,8 +48,17 @@
         No projects available.
       </div>
 
-      <div class="row" *ngFor="let p of filteredProjects()">
-        <input type="checkbox" [checked]="isSelected(p.id)" (click)="toggleSelection(p.id, $event)" />
+      <ng-container *ngIf="selectedProjectsList().length > 0">
+        <div class="section-label">Selected ({{ selectedProjectsList().length }})</div>
+        <div class="row" *ngFor="let p of selectedProjectsList()">
+          <input type="checkbox" [checked]="true" (click)="toggleSelection(p.id, $event)" />
+          <span class="row-name" (click)="makeActive(p.id)">{{ p.name }}</span>
+        </div>
+        <div class="section-label" *ngIf="unselectedProjectsList().length > 0">All Projects</div>
+      </ng-container>
+
+      <div class="row" *ngFor="let p of unselectedProjectsList()">
+        <input type="checkbox" [checked]="false" (click)="toggleSelection(p.id, $event)" />
         <span class="row-name" (click)="makeActive(p.id)">{{ p.name }}</span>
       </div>
 

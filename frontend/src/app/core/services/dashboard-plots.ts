@@ -48,9 +48,23 @@ export class DashboardPlotsService {
   readonly tab = signal(ALL_STATUSES_TAB);
   /** True once a load has completed at least once — distinguishes "never loaded" from "loaded, zero rows". */
   readonly hasLoaded = signal(false);
+  /** Total row count across all pages, read from the X-Total-Count response header — null when the
+   *  server didn't send one (older/other environments), in which case we fall back to a length guess. */
+  readonly totalCount = signal<number | null>(null);
 
-  /** True once a page came back exactly at PAGE_SIZE — there may be more. */
-  readonly hasNext = computed(() => this.plots().length >= PAGE_SIZE);
+  /** Exact page count once totalCount is known; null while it isn't. */
+  readonly totalPages = computed(() => {
+    const total = this.totalCount();
+    return total === null ? null : Math.max(1, Math.ceil(total / PAGE_SIZE));
+  });
+
+  /** Prefers the real total from X-Total-Count; falls back to "this page was full, there might be more"
+   *  when the header isn't present. */
+  readonly hasNext = computed(() => {
+    const totalPages = this.totalPages();
+    if (totalPages !== null) return this.page() + 1 < totalPages;
+    return this.plots().length >= PAGE_SIZE;
+  });
   readonly hasPrev = computed(() => this.page() > 0);
 
   async load(
@@ -68,19 +82,26 @@ export class DashboardPlotsService {
       const ids = projectIds.map((id) => (isNaN(Number(id)) ? id : Number(id)));
       const url = `${baseUrl.replace(/\/$/, '')}/meta/api/deforestation/qc/plots/${encodeURIComponent(tenant)}`;
       const params = new HttpParams().set('page', String(page)).set('size', String(PAGE_SIZE));
-      const result = await firstValueFrom(
+      const res = await firstValueFrom(
         this.http.post<DashboardPlot[]>(
           url,
           { projectIds: ids, tab },
-          { params, headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' } }
+          {
+            params,
+            headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+            observe: 'response',
+          }
         )
       );
-      this.plots.set(result ?? []);
+      const totalHeader = res.headers.get('X-Total-Count') ?? res.headers.get('x-total-count');
+      this.totalCount.set(totalHeader !== null ? Number(totalHeader) : null);
+      this.plots.set(res.body ?? []);
       this.page.set(page);
       this.tab.set(tab);
       this.hasLoaded.set(true);
     } catch (err) {
       this.plots.set([]);
+      this.totalCount.set(null);
       this.error.set(this.describeError(err));
       throw err;
     } finally {
@@ -108,6 +129,7 @@ export class DashboardPlotsService {
     this.page.set(0);
     this.tab.set(ALL_STATUSES_TAB);
     this.hasLoaded.set(false);
+    this.totalCount.set(null);
     this.lastParams = null;
   }
 

@@ -2,7 +2,6 @@ from fastapi import APIRouter, HTTPException
 
 from ..config import DEPARTMENTS
 from ..schemas import LoginRequest, UserOut
-from ..team_members import TEAM_MEMBERS
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
 
@@ -11,7 +10,10 @@ router = APIRouter(prefix="/api/auth", tags=["auth"])
 def login(req: LoginRequest):
     if req.department not in DEPARTMENTS:
         raise HTTPException(400, "Unknown department")
-    if req.name not in TEAM_MEMBERS.get(req.department, []):
-        raise HTTPException(400, "Unknown name for this department")
-    username = req.name.strip().lower().replace(" ", "_")
-    return UserOut(username=username, display_name=req.name, role=DEPARTMENTS[req.department])
+    name = req.name.strip()
+    # Names outside the known team list are allowed — the "Other" option on the
+    # login page lets someone not on the list type their own name in.
+    if not name:
+        raise HTTPException(400, "Name is required")
+    username = name.lower().replace(" ", "_")
+    return UserOut(username=username, display_name=name, role=DEPARTMENTS[req.department])

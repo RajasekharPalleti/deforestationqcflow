@@ -1,0 +1,163 @@
+<div class="plots-section">
+  <ng-container *ngIf="!reviewPlots().length">
+    <div class="plots-nav">
+      <input
+        *ngIf="plotColumns().length > 0"
+        type="text"
+        class="search-input"
+        placeholder="Search by CA name…"
+        [ngModel]="search()"
+        (ngModelChange)="search.set($event)"
+      />
+      <div class="nav-actions">
+        <ng-container *ngIf="allowReview()">
+          <button
+            class="btn btn-primary"
+            (click)="openReviewForSelection()"
+            [disabled]="selectedCount() === 0"
+          >
+            📝 Review Selected Plots ({{ selectedCount() }})
+          </button>
+          <button class="btn" (click)="clearSelection()" [disabled]="selectedCount() === 0">
+            ✖ Clear
+          </button>
+        </ng-container>
+        <button class="btn" (click)="prevPage()" [disabled]="!dashboardPlots.hasPrev() || dashboardPlots.loading()">
+          ◀ Prev
+        </button>
+        <span class="page-indicator">
+          Page {{ dashboardPlots.page() + 1 }}<ng-container *ngIf="dashboardPlots.totalPages() as tp"> of {{ tp }}</ng-container>
+        </span>
+        <button class="btn" (click)="nextPage()" [disabled]="!dashboardPlots.hasNext() || dashboardPlots.loading()">
+          Next ▶
+        </button>
+      </div>
+    </div>
+
+    <div class="info-box" *ngIf="dashboardPlots.error()">{{ dashboardPlots.error() }}</div>
+    <div class="info-box" *ngIf="dashboardPlots.loading()">Loading plots…</div>
+    <div
+      class="info-box"
+      *ngIf="!dashboardPlots.error() && !dashboardPlots.loading() && !dashboardPlots.hasLoaded() && plotColumns().length === 0"
+    >
+      No plots loaded yet. Click <b>📋 Load Plots</b> in the sidebar.
+    </div>
+    <div
+      class="info-box"
+      *ngIf="!dashboardPlots.error() && !dashboardPlots.loading() && dashboardPlots.hasLoaded() && plotColumns().length === 0"
+    >
+      {{ emptyMessage() }}
+    </div>
+    <div class="info-box" *ngIf="plotColumns().length > 0 && filteredPlots().length === 0">
+      No plots match “{{ search() }}”.
+    </div>
+
+    <div class="table-wrap" *ngIf="filteredPlots().length > 0">
+      <table>
+        <thead>
+          <tr>
+            <th class="select-col" *ngIf="allowReview()">
+              <input type="checkbox" [checked]="allOnPageSelected()" (change)="toggleSelectAllOnPage()" />
+            </th>
+            <th *ngFor="let col of plotColumns()">{{ columnTitle(col) }}</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let row of filteredPlots()">
+            <td class="select-col" *ngIf="allowReview()">
+              <input type="checkbox" [checked]="isRowSelected(row)" (change)="toggleRowSelection(row)" />
+            </td>
+            <td *ngFor="let col of plotColumns()">
+              <a *ngIf="isClickableColumn(col); else plain" class="plot-link" (click)="openReview(row)">
+                {{ cellValue(row, col) }}
+              </a>
+              <ng-template #plain>{{ cellValue(row, col) }}</ng-template>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </ng-container>
+
+  <div class="review-panel" *ngIf="reviewPlots().length">
+    <button type="button" class="btn back-link" (click)="closeReview()">◀ Back to list</button>
+
+    <h3>Reviewing {{ reviewPlots().length }} plot{{ reviewPlots().length === 1 ? '' : 's' }}</h3>
+
+    <div class="entity-block" *ngFor="let plot of reviewPlots()">
+      <div class="entity-header">
+        {{ plot.croppableAreaName }}
+        <span class="review-id">(ID: {{ plot.croppableAreaId }})</span>
+      </div>
+
+      <div class="field">
+        <label>{{ statusFieldLabel() }} <span class="required">*</span></label>
+        <select
+          [class.invalid]="isFieldInvalid(plot.croppableAreaId, 'qcStatus')"
+          [ngModel]="editFor(plot.croppableAreaId).qcStatus"
+          (ngModelChange)="updateEdit(plot.croppableAreaId, { qcStatus: $event })"
+        >
+          <option value="" disabled>-- Select {{ statusFieldLabel() }} --</option>
+          <option *ngFor="let s of qcStatusOptions" [value]="s">{{ s }}</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label>Reason <span class="required">*</span></label>
+        <select
+          [class.invalid]="isFieldInvalid(plot.croppableAreaId, 'reason')"
+          [ngModel]="editFor(plot.croppableAreaId).reason"
+          (ngModelChange)="updateEdit(plot.croppableAreaId, { reason: $event })"
+        >
+          <option value="" disabled>-- Select Reason --</option>
+          <option *ngFor="let r of reasonOptions" [value]="r">{{ r }}</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label>Comments <span class="required">*</span></label>
+        <input
+          type="text"
+          [class.invalid]="isFieldInvalid(plot.croppableAreaId, 'comments')"
+          [ngModel]="editFor(plot.croppableAreaId).comments"
+          (ngModelChange)="updateEdit(plot.croppableAreaId, { comments: $event })"
+        />
+      </div>
+    </div>
+
+    <p class="info-box error" *ngIf="validationMessage()">{{ validationMessage() }}</p>
+    <p class="info-box error" *ngIf="qcReview.error()">{{ qcReview.error() }}</p>
+    <p
+      class="info-box"
+      [class.success]="reviewOutcome() === 'success'"
+      [class.warning]="submitted() && reviewOutcome() === 'partial'"
+      [class.error]="submitted() && reviewOutcome() === 'failed'"
+      *ngIf="reviewMessage()"
+    >
+      {{ reviewMessage() }}
+    </p>
+
+    <button
+      class="btn"
+      [class.btn-primary]="!submitted()"
+      (click)="submitReview()"
+      [disabled]="qcReview.submitting() || submitted()"
+    >
+      {{
+        qcReview.submitting()
+          ? 'Submitting...'
+          : submitted()
+            ? '✅ Review Submitted'
+            : reviewPlots().length > 1
+              ? '📨 Submit Review (' + reviewPlots().length + ' plots)'
+              : '📨 Submit Review'
+      }}
+    </button>
+
+    <p class="info-box" *ngIf="reviewSucceeded()">
+      Go back to the list and select plot(s) to submit another review.
+    </p>
+
+    <button type="button" class="btn back-link" (click)="closeReview()">◀ Back to list</button>
+  </div>
+</div>

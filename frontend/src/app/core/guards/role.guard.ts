@@ -3,15 +3,15 @@ import { CanActivateFn, Router } from '@angular/router';
 import { AuthService } from '../services/auth';
 
 /**
- * Mirrors the nav filtering in app.py render_sidebar():
- * QA -> Overview + QA Review only, DS -> Overview + DS Review only,
- * PM/OTHER -> everything. Publish and Manage Users are PM-only.
+ * Mirrors the nav filtering in sidebar.ts:
+ * QA -> Overview + QA Review only, DS -> Overview + DS Review + Publish,
+ * PM/OTHER -> everything. Manage Users is PM-only.
  */
 const ALLOWED_ROLES: Record<string, string[]> = {
   '/overview': ['PM', 'QA', 'DS', 'OTHER'],
   '/qa-review': ['PM', 'QA', 'OTHER'],
   '/ds-review': ['PM', 'DS', 'OTHER'],
-  '/publish': ['PM', 'OTHER'],
+  '/publish': ['PM', 'DS', 'OTHER'],
   '/activity': ['PM', 'OTHER'],
   '/manage-users': ['PM'],
 };

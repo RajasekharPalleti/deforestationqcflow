@@ -3,8 +3,6 @@ ROLES = ["PM", "QA", "DS"]
 DEPARTMENTS = {
     "Quality Assurance": "QA",
     "Data Science": "DS",
-    "Product": "PM",
-    "Others": "OTHER",
 }
 
 TENANTS = ["BAT Brazil", "BAT Indonesia", "BAT Bangladesh", "ITC India", "Demo Tenant"]

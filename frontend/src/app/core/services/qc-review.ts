@@ -36,7 +36,7 @@ export interface ReviewSubmitResult {
  * POST .../meta/api/deforestation/qc/review/{companyCode}?reviewType=QA|DS
  * with the whole batch sent as a single array body.
  *
- * Distinct from the separate Publish feature/API (see pages/publish) — this only records the QC review.
+ * Distinct from DeforestationPublishService, which publishes rather than records the QC review.
  */
 @Injectable({ providedIn: 'root' })
 export class QcReviewService {

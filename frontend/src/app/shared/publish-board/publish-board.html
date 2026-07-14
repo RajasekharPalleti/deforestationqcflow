@@ -1,0 +1,117 @@
+<div class="publish-board">
+  <div class="plots-nav">
+    <input
+      *ngIf="plotColumns().length > 0"
+      type="text"
+      class="search-input"
+      placeholder="Search by CA name…"
+      [ngModel]="search()"
+      (ngModelChange)="search.set($event)"
+    />
+    <div class="nav-actions">
+      <button class="btn btn-primary" (click)="openConfirm()" [disabled]="selectedCount() === 0">
+        🚀 Publish Selected ({{ selectedCount() }})
+      </button>
+      <button class="btn" (click)="clearSelection()" [disabled]="selectedCount() === 0">✖ Clear</button>
+      <button class="btn" (click)="prevPage()" [disabled]="!dashboardPlots.hasPrev() || dashboardPlots.loading()">
+        ◀ Prev
+      </button>
+      <span class="page-indicator">
+        Page {{ dashboardPlots.page() + 1 }}<ng-container *ngIf="dashboardPlots.totalPages() as tp"> of {{ tp }}</ng-container>
+      </span>
+      <button class="btn" (click)="nextPage()" [disabled]="!dashboardPlots.hasNext() || dashboardPlots.loading()">
+        Next ▶
+      </button>
+      <button class="btn" (click)="refreshList()" [disabled]="dashboardPlots.loading()">🔄 Refresh</button>
+    </div>
+  </div>
+
+  <div class="info-box error" *ngIf="dashboardPlots.error()">{{ dashboardPlots.error() }}</div>
+  <div class="info-box" *ngIf="dashboardPlots.loading()">Loading plots…</div>
+  <div
+    class="info-box success"
+    *ngIf="!dashboardPlots.error() && !dashboardPlots.loading() && dashboardPlots.hasLoaded() && plotColumns().length === 0"
+  >
+    Nothing ready to publish. ✅
+  </div>
+  <div class="info-box" *ngIf="plotColumns().length > 0 && filteredPlots().length === 0">
+    No plots match “{{ search() }}”.
+  </div>
+
+  <div class="table-wrap" *ngIf="filteredPlots().length > 0">
+    <table>
+      <thead>
+        <tr>
+          <th class="select-col">
+            <input type="checkbox" [checked]="allOnPageSelected()" (change)="toggleSelectAllOnPage()" />
+          </th>
+          <th *ngFor="let col of plotColumns()">{{ columnTitle(col) }}</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let row of filteredPlots()">
+          <td class="select-col">
+            <input type="checkbox" [checked]="isRowSelected(row)" (change)="toggleRowSelection(row)" />
+          </td>
+          <td *ngFor="let col of plotColumns()">
+            <a *ngIf="isClickableColumn(col); else plain" class="plot-link" (click)="openConfirmForPlot(row)">
+              {{ cellValue(row, col) }}
+            </a>
+            <ng-template #plain>{{ cellValue(row, col) }}</ng-template>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <p
+    class="info-box"
+    [class.success]="resultOutcome() === 'success'"
+    [class.warning]="resultOutcome() === 'partial'"
+    [class.error]="resultOutcome() === 'failed'"
+    *ngIf="resultMessage()"
+  >
+    {{ resultMessage() }}
+  </p>
+
+  <ul class="failed-plot-list" *ngIf="failedPlots().length">
+    <li *ngFor="let f of failedPlots()">
+      <b>{{ f.croppableAreaName }}</b> <span class="review-id">(ID: {{ f.croppableAreaId }})</span>
+      — {{ f.errorMessage }}
+    </li>
+  </ul>
+
+  <button type="button" class="btn" (click)="refreshList()" [disabled]="dashboardPlots.loading()">🔄 Refresh</button>
+</div>
+
+<div class="confirm-overlay" *ngIf="confirming()">
+  <div class="confirm-dialog">
+    <h3>Confirm Publish</h3>
+    <p>Are you sure you want to publish {{ confirmTargets().length }} plot{{ confirmTargets().length === 1 ? '' : 's' }}?</p>
+
+    <ul class="confirm-plot-list">
+      <li *ngFor="let plot of visibleConfirmPlots()">
+        {{ plot.croppableAreaName }} <span class="review-id">(ID: {{ plot.croppableAreaId }})</span>
+      </li>
+      <li class="overflow-row" *ngIf="overflowConfirmCount() > 0">
+        +{{ overflowConfirmCount() }} more
+        <span class="info-icon">ℹ️</span>
+        <div class="overflow-tooltip">
+          <div class="overflow-title">Remaining plots:</div>
+          <div *ngFor="let plot of overflowConfirmPlots()">
+            {{ plot.croppableAreaName }} <span class="review-id">(ID: {{ plot.croppableAreaId }})</span>
+          </div>
+        </div>
+      </li>
+    </ul>
+
+    <p class="info-box error" *ngIf="deforestationPublish.error()">{{ deforestationPublish.error() }}</p>
+
+    <div class="confirm-actions">
+      <button class="btn" (click)="cancelConfirm()" [disabled]="deforestationPublish.submitting()">Cancel</button>
+      <button class="btn btn-primary" (click)="confirmPublish()" [disabled]="deforestationPublish.submitting()">
+        {{ deforestationPublish.submitting() ? 'Publishing...' : '🚀 Publish' }}
+      </button>
+    </div>
+  </div>
+</div>

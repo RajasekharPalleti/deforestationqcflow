@@ -1,0 +1,222 @@
+.publish-board {
+  margin-top: 8px;
+
+  h3 {
+    margin: 0 0 12px;
+    color: #225356;
+  }
+}
+
+.plots-nav {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+/* Buttons stay grouped together on the right, in their original order/spacing,
+   regardless of whether the search box on the left is present. */
+.nav-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-shrink: 0;
+
+  .page-indicator {
+    font-size: 13px;
+    color: #868585;
+  }
+}
+
+.search-input {
+  width: 100%;
+  max-width: 240px;
+  box-sizing: border-box;
+  padding: 8px 10px;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  font-family: inherit;
+  font-size: 13px;
+  color: #225356;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+
+  &:focus-visible {
+    border-color: #76be28;
+    box-shadow: 0 0 0 3px rgba(118, 190, 40, 0.15);
+  }
+}
+
+.select-col {
+  width: 32px;
+  text-align: center;
+}
+
+.table-wrap {
+  max-height: 400px;
+  overflow: auto;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+}
+
+.plot-link {
+  color: #0097a7;
+  cursor: pointer;
+  text-decoration: none;
+  font-weight: 500;
+  transition: color 0.15s ease;
+
+  &:hover {
+    color: #007580;
+    text-decoration: underline;
+  }
+}
+
+.failed-plot-list {
+  list-style: none;
+  margin: 8px 0 0;
+  padding: 0;
+  max-height: 200px;
+  overflow-y: auto;
+  border: 1px solid #f3c1c1;
+  border-radius: 6px;
+
+  li {
+    padding: 6px 10px;
+    border-bottom: 1px solid #fbe4e4;
+    font-size: 13px;
+    color: #8a2b2b;
+    background: #fff5f5;
+
+    &:last-child {
+      border-bottom: none;
+    }
+
+    .review-id {
+      color: #868585;
+      font-size: 12px;
+    }
+  }
+}
+
+.confirm-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 25, 25, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 50;
+  animation: overlay-fade-in 0.15s ease;
+}
+
+@keyframes overlay-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes dialog-pop-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.confirm-dialog {
+  background: #ffffff;
+  border-radius: 12px;
+  padding: 24px;
+  max-width: 420px;
+  width: 90%;
+  max-height: 80vh;
+  overflow-y: auto;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.22);
+  animation: dialog-pop-in 0.18s ease;
+
+  h3 {
+    margin: 0 0 8px;
+    color: #225356;
+  }
+
+  .confirm-plot-list {
+    list-style: none;
+    margin: 12px 0;
+    padding: 0;
+    max-height: 200px;
+    overflow-y: auto;
+    border: 1px solid #e5e7eb;
+    border-radius: 6px;
+
+    li {
+      padding: 6px 10px;
+      border-bottom: 1px solid #f0f0f0;
+      font-size: 14px;
+      color: #225356;
+
+      &:last-child {
+        border-bottom: none;
+      }
+
+      .review-id {
+        color: #868585;
+        font-size: 12px;
+      }
+    }
+
+    .overflow-row {
+      position: relative;
+      cursor: default;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      color: #0097a7;
+      font-weight: 600;
+
+      .info-icon {
+        font-size: 11px;
+      }
+
+      .overflow-tooltip {
+        display: none;
+        position: absolute;
+        bottom: calc(100% + 6px);
+        left: 0;
+        background: #ffffff;
+        color: #225356;
+        border: 1px solid #e5e7eb;
+        border-radius: 6px;
+        padding: 8px 10px;
+        font-size: 12px;
+        white-space: nowrap;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+        z-index: 20;
+        max-height: 200px;
+        overflow-y: auto;
+      }
+
+      .overflow-title {
+        font-weight: 700;
+        margin-bottom: 4px;
+      }
+
+      &:hover .overflow-tooltip {
+        display: block;
+      }
+    }
+  }
+
+  .confirm-actions {
+    display: flex;
+    gap: 12px;
+    justify-content: flex-end;
+    margin-top: 16px;
+  }
+}

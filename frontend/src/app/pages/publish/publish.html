@@ -1,65 +1,9 @@
-<div *ngIf="!isPm()" class="info-box error">Publish is restricted to PM.</div>
+<h2>🚀 Publish &nbsp;—&nbsp; {{ workspace.tenant() }} ({{ workspace.environment() }})</h2>
 
-<ng-container *ngIf="isPm()">
-  <h2 *ngIf="modelCfg() as cfg">🚀 Publish — {{ cfg.icon }} {{ workspace.tenant() }} · {{ workspace.activeProject() }} / {{ workspace.modelName() }}</h2>
+<p class="caption" *ngIf="dashboardStats.stats() as s">
+  <b>{{ s.readyToPublishPlots }}</b> plot{{ s.readyToPublishPlots === 1 ? '' : 's' }} ready to publish
+</p>
 
-  <ng-container *ngIf="data() as d">
-    <div class="metrics">
-      <div class="metric"><div class="metric-value">{{ d.ready.length }}</div><div class="metric-label">Ready to Publish</div></div>
-      <div class="metric"><div class="metric-value">{{ d.already_published }}</div><div class="metric-label">Already Published</div></div>
-      <div class="metric"><div class="metric-value">{{ d.no_final_status }}</div><div class="metric-label">No Final Status</div></div>
-    </div>
+<hr />
 
-    <div class="info-box" *ngIf="d.ready.length === 0">No plots ready to publish. Complete DS Review first.</div>
-
-    <ng-container *ngIf="d.ready.length > 0">
-      <hr />
-      <p class="section-title"><b>Final Status Breakdown:</b></p>
-      <div class="metrics">
-        <div class="metric" *ngFor="let kv of finalStatusBreakdown() | keyvalue">
-          <div class="metric-value">{{ kv.value }}</div>
-          <div class="metric-label">{{ kv.key }}</div>
-        </div>
-      </div>
-
-      <hr />
-      <div class="table-wrap">
-        <table>
-          <thead>
-            <tr>
-              <th *ngFor="let col of ['Plot ID','Farmer','Detection','Final Status','QA By','DS By']">{{ col }}</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr *ngFor="let row of tableRows()">
-              <td>{{ row['Plot ID'] }}</td>
-              <td>{{ row['Farmer'] }}</td>
-              <td>{{ row['Detection'] }}</td>
-              <td>{{ row['Final Status'] }}</td>
-              <td>{{ row['QA By'] }}</td>
-              <td>{{ row['DS By'] }}</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-      <button class="btn" (click)="downloadCsv()">⬇️ Download Publish List</button>
-
-      <hr />
-      <div class="publish-info-box">
-        Publishing sends a PATCH to SR backend per plot, setting <code>publish=true</code>.<br />
-        <span class="muted">
-          [Mock] PATCH /api/v2/plots/&#123;plot_id&#125;/deforestation · Body: &#123;"final_status":"...","publish":true&#125;
-        </span>
-      </div>
-
-      <label class="confirm-label">
-        <input type="checkbox" [ngModel]="confirmChecked()" (ngModelChange)="confirmChecked.set($event)" />
-        Confirm publish of {{ d.ready.length }} plots to platform
-      </label>
-      <button class="btn btn-primary" (click)="publish()" [disabled]="!confirmChecked() || publishing()">
-        🚀 Publish to Platform
-      </button>
-      <p class="success" *ngIf="successMessage()">{{ successMessage() }}</p>
-    </ng-container>
-  </ng-container>
-</ng-container>
+<app-publish-board></app-publish-board>
